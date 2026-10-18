@@ -53,6 +53,7 @@ canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:none;cur
 .langs{display:flex;gap:8px;flex-wrap:wrap}
 .langs .btn{padding:6px 12px}
 .langs .btn[aria-pressed="true"]{border-color:var(--blue);color:var(--fg);background:color-mix(in srgb,var(--blue) 18%,var(--panel))}
+.debug #cnum::after{content:' · DEBUG';color:#ff6a5a}
 .help .close{align-self:flex-start;margin-top:4px}
 .iconbtn[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
 .iconbtn{width:38px;height:34px;padding:0;font:700 1rem var(--display)}
@@ -927,7 +928,8 @@ const input = { left: false, right: false, jump: false, axis: 0, padAxis: 0 };
 const held = { btn: false, stick: false, pad: false };
 const jumpHeld = () => input.jump || held.btn || held.stick || held.pad;
 function pressJump() { if (!jumpHeld()) player.jumpBuf = 0.12; }
-let unlocked = 1;
+let unlocked = 1, debugMode = false;
+try { debugMode = localStorage.getItem('loops-debug') === '1'; } catch (e) {}
 try { unlocked = Math.max(1, Math.min(LEVELS.length, parseInt(localStorage.getItem('portalschleife-unlocked') || '1', 10) || 1)); } catch (e) {}
 
 // ---------- level ----------
@@ -2659,7 +2661,7 @@ function renderDots() {
   LEVELS.forEach((L, i) => {
     const b = document.createElement('button');
     b.type = 'button'; b.textContent = String(i + 1).padStart(2, '0');
-    b.title = lvName(i); b.disabled = i + 1 > unlocked;
+    b.title = lvName(i); b.disabled = !debugMode && i + 1 > unlocked;
     b.setAttribute('aria-current', i === li ? 'true' : 'false');
     b.addEventListener('click', () => { loadLevel(i); setHelp(false); });
     box.appendChild(b);
@@ -2699,7 +2701,20 @@ function setHelp(on) {
   input.left = input.right = input.jump = false; input.axis = 0;
   if (!on) canvas.focus();
 }
-$('helpBtn').addEventListener('click', () => setHelp(!helpOpen));
+// debug mode: tap "?" five times quickly to unlock every chamber (toggle, remembered on this device)
+let helpTaps = [];
+$('helpBtn').addEventListener('click', () => {
+  const now = performance.now(); helpTaps = helpTaps.filter(t => now - t < 2500); helpTaps.push(now);
+  if (helpTaps.length >= 5) {
+    helpTaps = []; debugMode = !debugMode;
+    try { localStorage.setItem('loops-debug', debugMode ? '1' : '0'); } catch (e) {}
+    document.body.classList.toggle('debug', debugMode); renderDots();
+    say(debugMode ? 'DEBUG: alle Kammern freigeschaltet.' : 'DEBUG aus.', 1.2); if (!helpOpen) setHelp(true);
+    return;
+  }
+  setHelp(!helpOpen);
+});
+document.body.classList.toggle('debug', debugMode);
 $('helpClose').addEventListener('click', () => setHelp(false));
 function resize() {
   const r = canvas.getBoundingClientRect();
