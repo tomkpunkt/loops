@@ -51,6 +51,11 @@ canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:none;cur
 .help h2 span{color:var(--blue)} .help h2 span+span{color:var(--orange)}
 .help h3{margin:4px 0 0;font:500 .7rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .langs{display:flex;gap:8px;flex-wrap:wrap}
+.settings{display:grid;gap:8px;max-width:340px}
+.settings label{display:grid;grid-template-columns:7.5em 1fr;align-items:center;gap:10px;font-size:.78rem;color:var(--fg)}
+.settings label.chk{grid-template-columns:auto 1fr}
+.settings input[type=range]{width:100%;accent-color:var(--blue);min-height:28px}
+.settings input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
 .langs .btn{padding:6px 12px}
 .langs .btn[aria-pressed="true"]{border-color:var(--blue);color:var(--fg);background:color-mix(in srgb,var(--blue) 18%,var(--panel))}
 .debug #cnum::after{content:' · DEBUG';color:#ff6a5a}
@@ -134,6 +139,13 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
         <p class="keys"><kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>F</kbd> Echo (ab 17) · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen (ab 33)</p>
         <p class="taphint">Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Ab Kammer 17 gibt es die Echo-Taste, ab Kammer 33 Greifen und Werfen.</p>
         <p class="padnote" id="padnote" hidden>Gamepad: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start neu.</p>
+        <h3 data-t="hSettings">Einstellungen</h3>
+        <div class="settings">
+          <label><span data-t="sMusic">Musik</span><input type="range" min="0" max="1" step="0.05" data-vol="music"></label>
+          <label><span data-t="sSfx">Effekte</span><input type="range" min="0" max="1" step="0.05" data-vol="sfx"></label>
+          <label><span data-t="sVoice">Stimme</span><input type="range" min="0" max="1" step="0.05" data-vol="voice"></label>
+          <label class="chk"><input type="checkbox" id="calmChk"><span data-t="sCalm">Bildschirmeffekte reduzieren</span></label>
+        </div>
         <h3 data-t="hLang">Sprache</h3>
         <div class="langs"><button class="btn" type="button" data-lang="de" lang="de">Deutsch</button><button class="btn" type="button" data-lang="en" lang="en">English</button></div>
         <button class="btn close" id="helpClose" type="button">Weiterspielen</button>
@@ -166,20 +178,26 @@ const COL = { blue: '#3b9cff', orange: '#ff8c2a' };
 const FORMANTS = { A: [730, 1090, 2440], E: [530, 1840, 2480], I: [270, 2290, 3010], O: [570, 840, 2410], U: [300, 870, 2240], V: [640, 1190, 2390] };
 // The test supervisor's voice: one config line, as in the paper
 const VOICE = { pitch: 168, tract: 1.12, breath: 0.07, jitter: 0.015, wobbleHz: 0 };
+// ---------- player settings ----------
+const SETTINGS = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem('loops-settings')) || {}; } catch (e) {} return Object.assign({ music: 0.8, sfx: 0.8, voice: 0.8, calm: false }, o); })();
+function saveSettings() { try { localStorage.setItem('loops-settings', JSON.stringify(SETTINGS)); } catch (e) {} }
 // ---------- sound (synthesized, starts after first interaction) ----------
 const Snd = (() => {
-  let ac = null, master = null, muted = false, humGain = null;
+  let ac = null, master = null, muted = false, humGain = null, sfxBus = null, voiceBus = null, musicBus = null;
   try { muted = localStorage.getItem('portalschleife-muted') === '1'; } catch (e) {}
   function init() {
     if (ac) { if (ac.state === 'suspended') ac.resume().catch(() => {}); return; }
     try {
       ac = new (window.AudioContext || window.webkitAudioContext)();
       master = ac.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ac.destination);
+      sfxBus = ac.createGain(); voiceBus = ac.createGain(); musicBus = ac.createGain();
+      for (const b of [sfxBus, voiceBus, musicBus]) b.connect(master);
+      sfxBus.gain.value = SETTINGS.sfx * 1.25; voiceBus.gain.value = SETTINGS.voice * 1.25; musicBus.gain.value = SETTINGS.music * 1.25;
       // low lab hum
       humGain = ac.createGain(); humGain.gain.value = 0.035;
       const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 180;
       for (const f of [55, 55.4, 110.3]) { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.connect(lp); o.start(); }
-      lp.connect(humGain); humGain.connect(master);
+      lp.connect(humGain); humGain.connect(sfxBus);
     } catch (e) { ac = null; }
   }
   function tone({ f = 440, f2 = null, type = 'sine', dur = 0.15, vol = 0.2, delay = 0, attack = 0.005 }) {
@@ -188,7 +206,7 @@ const Snd = (() => {
     o.type = type; o.frequency.setValueAtTime(f, t);
     if (f2) o.frequency.exponentialRampToValueAtTime(Math.max(20, f2), t + dur);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+    o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dur + 0.02);
   }
   function noise({ dur = 0.2, vol = 0.2, freq = 1200, q = 0.8, type = 'bandpass', delay = 0, f2 = null }) {
     if (!ac || muted) return;
@@ -198,12 +216,15 @@ const Snd = (() => {
     const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(freq, t); fl.Q.value = q;
     if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
     const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(fl); fl.connect(g); g.connect(master); src.start(t);
+    src.connect(fl); fl.connect(g); g.connect(sfxBus); src.start(t);
   }
   let lastLand = 0, breathBuf = null;
   return {
     init,
     get muted() { return muted; },
+    setVol(kind, v) { const b = { sfx: sfxBus, voice: voiceBus, music: musicBus }[kind]; if (b) b.gain.setTargetAtTime(v * 1.25, ac.currentTime, 0.05); },
+    suspend() { if (ac && ac.state === 'running') ac.suspend().catch(() => {}); },
+    resume() { if (ac && ac.state === 'suspended') ac.resume().catch(() => {}); },
     toggle() { muted = !muted; try { localStorage.setItem('portalschleife-muted', muted ? '1' : '0'); } catch (e) {} if (master) master.gain.value = muted ? 0 : 0.55; return muted; },
     shoot(c) { tone({ f: c === 'blue' ? 900 : 640, f2: c === 'blue' ? 1500 : 1050, type: 'square', dur: 0.08, vol: 0.05 }); },
     open(c) { tone({ f: c === 'blue' ? 220 : 165, f2: c === 'blue' ? 440 : 330, type: 'sine', dur: 0.35, vol: 0.16, attack: 0.02 }); noise({ dur: 0.3, vol: 0.06, freq: 800, f2: 3000 }); },
@@ -239,7 +260,7 @@ const Snd = (() => {
     song(vowels) {
       if (!ac) return;
       this.stopSong(true);
-      const bus = ac.createGain(); bus.gain.value = 0.9; bus.connect(master);
+      const bus = ac.createGain(); bus.gain.value = 0.9; bus.connect(musicBus);
       // a little room for the voice: feedback delay
       const dl = ac.createDelay(1); dl.delayTime.value = 0.29; const fb = ac.createGain(); fb.gain.value = 0.28;
       const dlp = ac.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 2600;
@@ -343,7 +364,7 @@ const Snd = (() => {
         const g = ac.createGain(); g.gain.value = a * 3.2;
         src.connect(bp); brG.connect(bp); bp.connect(g); g.connect(sum);
       });
-      sum.connect(env); env.connect(master);
+      sum.connect(env); env.connect(voiceBus);
       const atk = dur * 0.25, rel = dur * 0.4;
       env.gain.setValueAtTime(0.0001, t);
       env.gain.linearRampToValueAtTime(vol, t + atk);
@@ -945,6 +966,7 @@ const TXT = {
     // DOM
     aHelp: 'Hinweis und Kammern', aSound: 'Ton an oder aus', aRestart: 'Kammer neu starten', aCanvas: 'Spielfeld', aDots: 'Kammer wählen',
     hHint: 'Hinweis', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
+    hSettings: 'Einstellungen', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     padnote: 'Gamepad: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start neu.',
@@ -982,6 +1004,7 @@ const TXT = {
     doneSub: 'Restart or pick a chamber above', nextSub: 'Loading next chamber …',
     aHelp: 'Hint and chambers', aSound: 'Sound on or off', aRestart: 'Restart chamber', aCanvas: 'Playfield', aDots: 'Choose chamber',
     hHint: 'Hint', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
+    hSettings: 'Settings', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     padnote: 'Gamepad: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start restart.',
@@ -1083,7 +1106,7 @@ function makeBody(kind, x, y) {
   const s = kind === 'player' ? { w: 20, h: 28 } : kind === 'turret' ? { w: 16, h: 26 } : { w: 24, h: 24 };
   return { kind, x, y, w: s.w, h: s.h, vx: 0, vy: 0, onGround: false, vang: 0, sx: x, sy: y, coyote: 0, jumpBuf: 0 };
 }
-let lastLoaded = -1, idleT = 0, gunTaken = false;
+let lastLoaded = -1, idleT = 0, gunTaken = false, transIn = 0;
 function loadLevel(i) {
   li = i;
   grid = LEVELS[i].map.map(r => r.split(''));
@@ -1116,6 +1139,7 @@ function loadLevel(i) {
   state = 'play'; winTimer = 0; introT = 2.4;
   if (typeof camReset === 'function') { cine = null; camReset(); visor = 1; saveStats(); Snd.stopSong(); }
   gunTaken = false;
+  transIn = lastLoaded >= 0 ? 0.45 : 0;
   if (typeof say === 'function') say(i === lastLoaded && LEVELS[i] ? pickTxt('RETRY') : lvQuip(i), 2.6, 1.2); lastLoaded = i; idleT = 0;
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const c = grid[y][x];
@@ -1489,6 +1513,7 @@ function updateTurrets(dt) {
     }); }
     const e = turretEye(t); flashes.push({ x: e.x, y: e.y, color: '#ff6a5a', life: 0.4 });
     Snd.tfire();
+    shake(who === player ? 7 : 3.5, who === player ? 0.3 : 0.18);
     if (who === player) { if (state === 'play') { burst(player.x, player.y, '#ff4d4d', 18); die(); } }
     else if (who.kind === 'echo') burst(who.x, who.y, '#b48cff', 10);
     else if (who.kind === 'turret') disableTurret(who);
@@ -1651,7 +1676,7 @@ function die() {
   burst(player.x, player.y, '#b8ff6a', 22);
   player.x = player.sx; player.y = player.sy; player.vx = player.vy = 0; player.vang = 0;
   deathFlash = 0.35; trail = [];
-  stats.deaths++; saveStats();
+  stats.deaths++; saveStats(); shake(4, 0.2);
   Snd.die(); say(pickTxt('DEATH'), 1.8);
 }
 
@@ -1817,8 +1842,10 @@ function step(dt) {
   for (const f of flashes) f.life -= dt;
   flashes = flashes.filter(f => f.life > 0);
   updateSubtitle(dt);
+  shakeT = Math.max(0, shakeT - dt); if (!shakeT) shakeAmp = 0;
+  transIn = Math.max(0, transIn - dt);
   nextFlicker -= dt;
-  if (nextFlicker <= 0) { flicker = 0.18 + Math.random() * 0.1; nextFlicker = 25 + Math.random() * 25; Snd.buzz(); }
+  if (nextFlicker <= 0) { nextFlicker = 25 + Math.random() * 25; if (!SETTINGS.calm) { flicker = 0.18 + Math.random() * 0.1; Snd.buzz(); } }
   flicker = Math.max(0, flicker - dt);
 }
 
@@ -2897,6 +2924,8 @@ function pixelate(px) {
   ctx.drawImage(pixCv, 0, 0, canvas.width / b, canvas.height / b, 0, 0, canvas.width, canvas.height);
   ctx.restore(); ctx.imageSmoothingEnabled = true;
 }
+let shakeT = 0, shakeAmp = 0;
+function shake(amp, dur) { if (SETTINGS.calm) return; if (amp > shakeAmp * (shakeT > 0 ? 1 : 0)) shakeAmp = amp; shakeT = Math.max(shakeT, dur); }
 function camTransform() {
   if (cam.z === 1) { ctx.setTransform(k, 0, 0, k, 0, 0); return; }
   const z = cam.z, hw = W / (2 * z), hh = H / (2 * z);
@@ -3018,6 +3047,7 @@ function drawCineOverlay() {
 
 function render() {
   camTransform();
+  if (shakeT > 0) { const a = shakeAmp * Math.min(1, shakeT / 0.12); ctx.translate((Math.random() - 0.5) * a, (Math.random() - 0.5) * a); }
   drawBackground();
   drawStencil();
   drawMotes();
@@ -3043,12 +3073,19 @@ function render() {
   drawSleepZ();
   drawCrashGhosts();
   ctx.setTransform(k, 0, 0, k, 0, 0);
-  if (cam.pix > 1) pixelate(cam.pix);
+  { // chamber change: pixelate out at the end of the win screen, and back in after loading
+    let tp = 1, tf = 0;
+    if (state === 'win' && winTimer < 0.4) { const u = 1 - winTimer / 0.4; tp = lerp(1, 18, u * u); tf = u * 0.85; }
+    if (transIn > 0) { const u = transIn / 0.45; tp = Math.max(tp, lerp(1, 18, u * u)); tf = Math.max(tf, u * 0.85); }
+    const px = Math.max(cam.pix, qpix(tp));
+    if (px > 1) pixelate(px);
+    if (tf > 0) { ctx.fillStyle = `rgba(5,8,11,${tf})`; ctx.fillRect(0, 0, W, H); }
+  }
   drawVignette();
   if (flicker > 0) { const on = Math.sin(flicker * 60) > 0.3 ? 0 : 0.07; ctx.fillStyle = `rgba(0,0,0,${on})`; ctx.fillRect(0, 0, W, H); }
   drawAim();
   drawEchoHud();
-  if (rewindFx > 0) { ctx.fillStyle = `rgba(180,140,255,${rewindFx * 0.5})`; ctx.fillRect(0, 0, W, H); }
+  if (rewindFx > 0) { ctx.fillStyle = `rgba(180,140,255,${rewindFx * (SETTINGS.calm ? 0.15 : 0.5)})`; ctx.fillRect(0, 0, W, H); }
   if (state === 'crash') drawCrash();
   if (gotGun > 0) {
     const a = Math.min(1, gotGun / 0.5, (4.6 - gotGun) / 0.4);
@@ -3073,7 +3110,7 @@ function render() {
     ctx.fillText(lvName(li).toUpperCase(), W / 2, 68);
     ctx.globalAlpha = 1;
   }
-  if (deathFlash > 0) { ctx.fillStyle = `rgba(140,220,70,${deathFlash * 0.6})`; ctx.fillRect(0, 0, W, H); }
+  if (deathFlash > 0) { ctx.fillStyle = `rgba(140,220,70,${deathFlash * (SETTINGS.calm ? 0.15 : 0.6)})`; ctx.fillRect(0, 0, W, H); }
   if (state === 'win' || state === 'done') {
     ctx.fillStyle = 'rgba(8,12,16,0.72)'; ctx.fillRect(0, H / 2 - 46, W, 92);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -3289,6 +3326,10 @@ function pollPad() {
 }
 
 const wakeAudio = () => Snd.init();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (!helpOpen && !cine && state === 'play') setHelp(true); Snd.suspend(); }
+  else Snd.resume();
+});
 window.addEventListener('pointerdown', e => { if (cine && !(e.target.closest && e.target.closest('button, .help, a'))) cineInput(); }, true);
 window.addEventListener('keydown', e => { if (!cine || e.repeat) return; if (e.code === 'Tab') return; cineInput(); e.preventDefault(); e.stopImmediatePropagation(); }, true);
 window.addEventListener('pointerdown', wakeAudio, true);
@@ -3323,6 +3364,13 @@ document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click'
   LANG = b.dataset.lang; try { localStorage.setItem('loops-lang', LANG); } catch (e) {}
   applyLang(); if (state === 'play' && subtitle) subtitle = null;
 }));
+document.querySelectorAll('[data-vol]').forEach(inp => {
+  const k2 = inp.dataset.vol; inp.value = SETTINGS[k2];
+  inp.addEventListener('input', () => { SETTINGS[k2] = +inp.value; saveSettings(); Snd.setVol(k2, SETTINGS[k2]); });
+  inp.addEventListener('change', () => { if (k2 === 'sfx') Snd.button(true); if (k2 === 'voice') say(tr('speaker') === 'TESTLEITUNG' ? 'So klinge ich.' : 'This is how I sound.', 0.8); });
+});
+$('calmChk').checked = SETTINGS.calm;
+$('calmChk').addEventListener('change', e => { SETTINGS.calm = e.target.checked; saveSettings(); if (SETTINGS.calm) { flicker = 0; shakeT = 0; } });
 applyLang();
 loadLevel(0);
 layout();
