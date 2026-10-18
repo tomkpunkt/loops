@@ -225,10 +225,102 @@ const Snd = (() => {
     rec(on) { if (on) { tone({ f: 880, type: 'sine', dur: 0.08, vol: 0.08 }); tone({ f: 1320, type: 'sine', dur: 0.1, vol: 0.07, delay: 0.08 }); }
       else { tone({ f: 1400, f2: 180, type: 'sawtooth', dur: 0.45, vol: 0.07 }); noise({ dur: 0.4, vol: 0.06, freq: 3000, f2: 300 }); } },
     grab() { tone({ f: 180, f2: 420, type: 'sawtooth', dur: 0.22, vol: 0.06 }); noise({ dur: 0.2, vol: 0.05, freq: 600, f2: 1800 }); },
+    siren() { tone({ f: 520, f2: 880, type: 'sawtooth', dur: 0.42, vol: 0.05 }); tone({ f: 880, f2: 520, type: 'sawtooth', dur: 0.42, vol: 0.05, delay: 0.43 }); },
+    tlock() { tone({ f: 990, type: 'square', dur: 0.05, vol: 0.05 }); tone({ f: 1320, type: 'square', dur: 0.06, vol: 0.05, delay: 0.07 }); },
+    tbeep(k) { tone({ f: 700 + k * 900, type: 'square', dur: 0.03, vol: 0.035 }); },
+    tfire() { noise({ dur: 0.18, vol: 0.2, freq: 1800, f2: 300 }); tone({ f: 220, f2: 60, type: 'sawtooth', dur: 0.2, vol: 0.09 }); },
+    tdown() { tone({ f: 600, f2: 80, type: 'square', dur: 0.5, vol: 0.06 }); },
     drop() { tone({ f: 380, f2: 160, type: 'triangle', dur: 0.15, vol: 0.06 }); },
     throw() { tone({ f: 600, f2: 120, type: 'sawtooth', dur: 0.2, vol: 0.09 }); noise({ dur: 0.25, vol: 0.12, freq: 900, f2: 200, type: 'lowpass' }); },
     glitch() { noise({ dur: 0.05 + Math.random() * 0.12, vol: 0.12, freq: 300 + Math.random() * 3000, q: 4 }); if (Math.random() < 0.3) tone({ f: 60 + Math.random() * 400, type: 'square', dur: 0.08, vol: 0.05 }); },
     // Formant vowel (source-filter model): pulse-ish source with jitter + breath, three band-passes, swell envelope.
+    // ---------- credits song: an original synth-pop tune (G major, 104 BPM) sung by a bright mumble voice ----------
+    song() {
+      if (!ac) return;
+      this.stopSong(true);
+      const bus = ac.createGain(); bus.gain.value = 0.9; bus.connect(master);
+      // a little room for the voice: feedback delay
+      const dl = ac.createDelay(1); dl.delayTime.value = 0.29; const fb = ac.createGain(); fb.gain.value = 0.28;
+      const dlp = ac.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 2600;
+      const wet = ac.createGain(); wet.gain.value = 0.35; dl.connect(dlp); dlp.connect(fb); fb.connect(dl); dlp.connect(wet); wet.connect(bus);
+      const voiceIn = ac.createGain(); voiceIn.connect(bus); voiceIn.connect(dl);
+      const BEAT = 60 / 104, t0 = ac.currentTime + 0.15;
+      const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+      const CH = { G: [55, 59, 62], D: [57, 62, 66], Em: [52, 55, 59], C: [52, 55, 60], Bm: [54, 59, 62] };
+      const ROOT = { G: 43, D: 38, Em: 40, C: 36, Bm: 35 };
+      const bars = ['G', 'D', 'Em', 'C',                       // intro
+        'G', 'Bm', 'Em', 'C', 'G', 'D', 'C', 'D',                 // verse
+        'C', 'D', 'Bm', 'Em', 'C', 'D', 'G', 'G',                 // chorus
+        'C', 'D', 'G', 'G'];                                      // outro
+      // melody: [beat from verse start, length in beats, midi]
+      const MEL = [[0.5,.5,71],[1,.5,71],[1.5,.5,69],[2,1,67],[3,.5,69],[3.5,.5,71],[4,1.5,74],[5.5,.5,71],[6,1.5,69],
+        [8.5,.5,67],[9,.5,67],[9.5,.5,69],[10,1,71],[11,.5,74],[11.5,.5,71],[12,1.5,72],[13.5,.5,71],[14,2,69],
+        [16.5,.5,71],[17,.5,71],[17.5,.5,74],[18,1,76],[19,.5,74],[19.5,.5,71],[20,1.5,69],[21.5,.5,66],[22,1.5,69],
+        [24.5,.5,67],[25,.5,69],[25.5,.5,71],[26,1,72],[27,.5,71],[27.5,.5,69],[28,1,69],[29,.5,71],[30,2,69],
+        [32,1,76],[33,.5,76],[33.5,.5,74],[34,1,72],[35,1,74],[36,1.5,74],[37.5,.5,72],[38,1,71],[39,1,69],
+        [40,1,71],[41,.5,74],[41.5,.5,78],[42,1,78],[43,1,76],[44,2,76],[46,.5,74],[46.5,.5,71],
+        [48,1,72],[49,.5,76],[49.5,.5,79],[50,1.5,79],[51.5,.5,76],[52,1,78],[53,.5,76],[53.5,.5,74],[54,1,74],[55,1,69],
+        [56,1,71],[57,1,74],[58,4,79]];
+      const VW = ['A', 'O', 'E', 'A', 'I', 'O', 'A', 'E'];
+      const st = this._song = { bus, stop: false, next: 0, timer: null };
+      const env = (g, t, a, peak, hold, r) => { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + r); };
+      const osc = (type, f, t, dur, peak, a, r, dest, cut, det) => {
+        const o = ac.createOscillator(); o.type = type; o.frequency.value = f; if (det) o.detune.value = det;
+        const g = ac.createGain(); let last = o;
+        if (cut) { const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = cut; o.connect(lp); last = lp; }
+        last.connect(g); g.connect(dest); env(g, t, a, peak, Math.max(0, dur - a), r); o.start(t); o.stop(t + dur + r + 0.05);
+      };
+      const nz = (t, dur, peak, type, f, dest) => {
+        if (!breathBuf) { const n = ac.sampleRate; breathBuf = ac.createBuffer(1, n, n); const d = breathBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; }
+        const b = ac.createBufferSource(); b.buffer = breathBuf; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f;
+        const g = ac.createGain(); b.connect(fl); fl.connect(g); g.connect(dest); env(g, t, 0.002, peak, 0, dur); b.start(t, Math.random() * 0.5); b.stop(t + dur + 0.05);
+      };
+      let prevF = null;
+      const sing = (t, m, dur, v) => {   // female formant voice with vibrato and a soft glide from the previous note
+        const f0 = mtof(m), F = FORMANTS[v] || FORMANTS.A, tract = 1.2;
+        const o = ac.createOscillator(); o.type = 'sawtooth';
+        o.frequency.setValueAtTime(prevF && Math.abs(prevF - f0) < f0 * 0.5 ? prevF : f0, t); o.frequency.exponentialRampToValueAtTime(f0, t + 0.06); prevF = f0;
+        const lfo = ac.createOscillator(); lfo.frequency.value = 5.3; const lg = ac.createGain(); lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f0 * 0.013, t + Math.min(0.35, dur * 0.6)); lfo.connect(lg); lg.connect(o.frequency);
+        const sum = ac.createGain(), g = ac.createGain();
+        [[F[0], 90, 1], [F[1], 110, 0.55], [F[2], 140, 0.3]].forEach(([f, bw, a]) => { const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * tract; bp.Q.value = f * tract / bw; const ga = ac.createGain(); ga.gain.value = a * 3; o.connect(bp); bp.connect(ga); ga.connect(sum); });
+        sum.connect(g); g.connect(voiceIn); env(g, t, 0.04, 0.24, Math.max(0, dur - 0.1), 0.18);
+        o.start(t); lfo.start(t); o.stop(t + dur + 0.3); lfo.stop(t + dur + 0.3);
+        nz(t, 0.05, 0.02, 'highpass', 5000, voiceIn); // a breath of consonant
+      };
+      const schedBar = i => {
+        const ch = bars[i], tb = t0 + i * 4 * BEAT, last = i === bars.length - 1, fade = i >= bars.length - 2;
+        // pad
+        for (const m of CH[ch]) for (const d of [-7, 7]) osc('sawtooth', mtof(m), tb, 4 * BEAT, fade ? 0.012 : 0.018, 0.35, last ? 2.5 : 0.5, bus, 1300, d);
+        // arpeggio
+        const arp = [CH[ch][0] + 12, CH[ch][1] + 12, CH[ch][2] + 12, CH[ch][1] + 12];
+        for (let k = 0; k < 8; k++) osc('square', mtof(arp[k % 4]), tb + k * BEAT / 2, BEAT * 0.3, last ? 0 : 0.016, 0.005, 0.12, bus, 2800);
+        // bass
+        if (!last) for (const [b, l] of [[0, 1.5], [1.5, .5], [2, 1.5], [3.5, .5]]) osc('triangle', mtof(ROOT[ch] + (b === 1.5 || b === 3.5 ? 12 : 0)), tb + b * BEAT, l * BEAT * 0.9, 0.07, 0.01, 0.08, bus);
+        else osc('triangle', mtof(ROOT[ch]), tb, 4 * BEAT, 0.1, 0.01, 2, bus);
+        // drums from the verse on, hats throughout
+        const drums = i >= 4 && i < bars.length - 1;
+        for (let k = 0; k < 8; k++) if (!last) nz(tb + k * BEAT / 2, 0.04, k % 2 ? 0.02 : 0.03, 'highpass', 7000, bus);
+        if (drums) for (let b = 0; b < 4; b++) {
+          if (b % 2 === 0) { const o = ac.createOscillator(); o.type = 'sine'; const g = ac.createGain(); o.frequency.setValueAtTime(140, tb + b * BEAT); o.frequency.exponentialRampToValueAtTime(42, tb + b * BEAT + 0.18); o.connect(g); g.connect(bus); env(g, tb + b * BEAT, 0.003, 0.2, 0, 0.2); o.start(tb + b * BEAT); o.stop(tb + b * BEAT + 0.3); }
+          else nz(tb + b * BEAT, 0.14, 0.09, 'bandpass', 1900, bus);
+        }
+        // melody notes that start in this bar
+        const vs = (i - 4) * 4;
+        MEL.forEach(([b, l, m], n) => { if (b >= vs && b < vs + 4) sing(t0 + (4 * 4 + b) * BEAT, m, l * BEAT * 0.95, VW[n % VW.length]); });
+      };
+      const tick = () => {
+        if (st.stop) return;
+        while (st.next < bars.length && t0 + st.next * 4 * BEAT < ac.currentTime + 1.2) schedBar(st.next++);
+        if (st.next >= bars.length) { clearInterval(st.timer); st.timer = null; }
+      };
+      tick(); st.timer = setInterval(tick, 250);
+    },
+    stopSong(now) {
+      const st = this._song; if (!st) return;
+      st.stop = true; if (st.timer) clearInterval(st.timer);
+      try { const t = ac.currentTime; st.bus.gain.cancelScheduledValues(t); st.bus.gain.setValueAtTime(st.bus.gain.value, t); st.bus.gain.linearRampToValueAtTime(0.0001, t + (now ? 0.05 : 1.2)); setTimeout(() => { try { st.bus.disconnect(); } catch (e) {} }, now ? 100 : 1400); } catch (e) {}
+      this._song = null;
+    },
     vowel(v, f0, dur, vol, voice) {
       if (!ac || muted) return;
       const F = FORMANTS[v] || FORMANTS.A, t = ac.currentTime, end = t + dur;
@@ -772,6 +864,39 @@ const LEVELS = [
     hint: 'Finale. Stoß den Würfel aus der Zelle durch ein Portal, das ihn an der Decke wieder ausspuckt. Dann trag ihn über deinem Kopf durch den Laservorhang zum Schalter.',
     quip: 'Letzte Kammer. Wir sind fast ein wenig gerührt. Fast.',
     map: ['######WW##v#####','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','####.........###','#..G.........D.#','W..G.........D.#','WC.G..P...BB.DE#','################'] },
+  { name: 'Sichtschutz', portals: false,
+    hint: 'Neu: Turrets. Was der rote Strahl erfasst, wird nach kurzem Aufladen beschossen. Ein Würfel nimmt ihm die Sicht. Schieb ihn vor dir her und spring hinter dem Turret herunter. Hinter sich sieht er nichts.',
+    quip: 'Sicherheitsprotokoll aktiv. Diese Geräte schützen die Anlage. Vor Ihnen.',
+    map: ['################','################','################','################','################','################','################','################',
+      '#..............#','#..............#','#..............#','#..............#','#P.C........Y.E#','################','################','################'] },
+  { name: 'Selbstgespräch',
+    hint: 'Turrets beschießen alles, was sie sehen, auch sich selbst. Lenk seinen Blick mit zwei Portalen so um, dass er von oben auf seinen eigenen Kopf schaut.',
+    quip: 'Dieses Modell ist äußerst selbstkritisch. Nutzen Sie das.',
+    map: ['################','################','###########WW###','#..............#','#..............#','W..............#','WE..........Y.P#','################','################','################','################','################','################','################','################','################'] },
+  { name: 'Freiwilliger', echo: true, portals: false,
+    hint: 'Der Schalter liegt im Blickfeld des Turrets, und unten gibt es keinen Weg zurück. Nimm auf, wie du auf den Schalter springst, und beende die Aufnahme sofort. Dein Echo ist immun und bleibt stehen.',
+    quip: 'Wir suchen einen Freiwilligen. Sie haben sich gerade selbst gemeldet.',
+    map: ['################','################','################','################','################','#.......D......#','#P......D.....E#','###.############','#..............#','#..............#','#..............#','#..............#','#..B..........Y#','################','################','################'] },
+  { name: 'Umzug', grav: true, portals: false,
+    hint: 'Ein Turret, den du trägst, schaut in deine Zielrichtung. Stell ihn unten so ab, dass er seinen Kollegen sieht. Zwei Turrets, die sich sehen, schießen sich gegenseitig ab.',
+    quip: 'Turrets kennen keine Kollegialität. Wir auch nicht.',
+    map: ['################','################','################','################','################','#..............#','#..............#','#..............#','#..............#','#..............#','#........Y..P..#','#........#######','#ET......#######','################','################','################'] },
+  { name: 'Querschläger',
+    hint: 'Zwei Turrets, zwei Etagen, zwei weiße Wände. Verbinde die Wände so, dass jeder Turret den anderen sieht. Danach ist der untere Gang frei.',
+    quip: 'Bitte stellen Sie die beiden einander vor. Es wird kurz.',
+    map: ['################','################','################','#..............#','#..............W','#.T............W','#GGGGGGGGGGGGGG#','#..............#','#.....P........#','#GGGGGGGGGGGG..#','#..............#','W..............#','WE...........Y.#','################','################','################'] },
+  { name: 'Entsorgung', grav: true, portals: false,
+    hint: 'Von oben sieht er dich nicht. Greif ihn durch das Loch im Boden und wirf ihn weg. Ein geworfener Turret schaltet sich ab.',
+    quip: 'Turrets sind Eigentum der Anlage. Bitte gehen Sie sorgfältig damit um. Oder auch nicht.',
+    map: ['################','################','################','################','#..............#','#..............#','#..............#','#..............#','#..............#','#............P.#','#........##..###','#..............#','#E........Y....#','################','################','################'] },
+  { name: 'Lockvogel', echo: true, portals: false,
+    hint: 'Auf dem Sims erfasst dich der obere Strahl. Stellt sich dein Echo auf den Sockel, verdeckt es den Strahl. Nimm auf, wie du auf den Sockel springst, und beende die Aufnahme schnell.',
+    quip: 'Ihr Echo steht Modell. Der Turret ist begeistert.',
+    map: ['################','################','################','################','################','################','#..............#','#..............#','#..............#','#..............#','#..............#','#E............Y#','#########P#...##','################','################','################'] },
+  { name: 'Kreuzfeuer', grav: true, portals: false,
+    hint: 'Die Tür trennt zwei Turrets, die sich nicht sehen dürfen. Oder gerade doch. Wirf den Würfel auf den hohen Schalter und warte, bevor du hinuntergehst.',
+    quip: 'Zwei Turrets, eine Tür. Wir haben Popcorn bereitgestellt.',
+    map: ['################','################','################','################','#..............#','#.............##','#.............##','#..........BBB##','#P.C.......#####','#####..#########','#......#########','#......D.......#','#.T....D.....YE#','################','################','################'] },
 ];
 const QUIPS = ['Willkommen zurück. Das Gefühl, an zwei Orten gleichzeitig zu sein, ist normal.',
   'Schwung ist kostenlos. Säure leider auch.',
@@ -801,11 +926,14 @@ const TXT = {
     gun: 'Neue Ausrüstung. Die Gravitationskanone hebt Würfel, trägt sie und wirft sie. Bitte nur Würfel.',
     lastWin: 'Alle Tests bestanden. Eine Belohnung ist in Planung.',
     intro: 'Oh. Sie sind wach. Willkommen in der Testanlage. Bitte bleiben Sie ruhig. Und neugierig.',
-    outro1: 'Alle achtundvierzig Kammern. Das … war so nicht vorgesehen.',
+    outro1: 'Alle Sicherheitssysteme umgangen. Das … war so nicht vorgesehen.',
+    alarm1: 'Alle achtundvierzig Kammern. Das … war so nicht vorgesehen.',
+    alarm2: 'Sicherheitsprotokoll aktiviert. Die Testperson verlässt die Anlage nicht.',
+    alarmBanner: 'SICHERHEITSPROTOKOLL',
     outro2: 'Ich trage Sie als bestanden ein. Bitte warten Sie hier. Bis auf Weiteres.',
     rec: 'AUFNAHME', echoPlay: 'ECHO SPIELT', echoWait: 'ECHO WARTET', echoReady: 'ECHO BEREIT · F',
     sysErr: 'SYSTEMFEHLER', sysErrG: 'SYST3MF#HL3R', speaker: 'TESTLEITUNG', tagline: 'EIN TESTPROTOKOLL',
-    start: 'TIPPEN ODER TASTE ZUM STARTEN', skip: 'TIPPEN ZUM ÜBERSPRINGEN', allDone48: 'ALLE 48 KAMMERN GESCHAFFT',
+    start: 'TIPPEN ODER TASTE ZUM STARTEN', skip: 'TIPPEN ZUM ÜBERSPRINGEN', allDone48: 'ALLE {n} KAMMERN GESCHAFFT',
     stTime: 'Spielzeit', stDeaths: 'Gescheitert', stPortals: 'Portale geschossen', stEchoes: 'Echos aufgenommen',
     thanks1: 'Die Testleitung bedankt sich für Ihre Kooperation.', thanks2: 'Danke fürs Spielen.', toTitle: 'TIPPEN FÜR DEN TITEL',
     gunTitle: 'GRAVITATIONSKANONE', gunSub: 'Greifen, tragen, werfen', chamber: 'KAMMER', allDone: 'ALLE KAMMERN GESCHAFFT', done: 'KAMMER GESCHAFFT',
@@ -834,11 +962,14 @@ const TXT = {
     gun: 'New equipment. The gravity gun lifts cubes, carries them and throws them. Cubes only, please.',
     lastWin: 'All tests passed. A reward is being planned.',
     intro: "Oh. You're awake. Welcome to the test facility. Please remain calm. And curious.",
-    outro1: 'All forty-eight chambers. That … was not part of the plan.',
+    outro1: 'All security systems bypassed. That … was not part of the plan.',
+    alarm1: 'All forty-eight chambers. That … was not part of the plan.',
+    alarm2: 'Security protocol activated. The test subject will not leave the facility.',
+    alarmBanner: 'SECURITY PROTOCOL',
     outro2: "I'm marking you as passed. Please wait here. Until further notice.",
     rec: 'RECORDING', echoPlay: 'ECHO PLAYING', echoWait: 'ECHO WAITING', echoReady: 'ECHO READY · F',
     sysErr: 'SYSTEM ERROR', sysErrG: 'SYST3M #RR0R', speaker: 'TEST CONTROL', tagline: 'A TEST PROTOCOL',
-    start: 'TAP OR PRESS ANY KEY', skip: 'TAP TO SKIP', allDone48: 'ALL 48 CHAMBERS COMPLETE',
+    start: 'TAP OR PRESS ANY KEY', skip: 'TAP TO SKIP', allDone48: 'ALL {n} CHAMBERS COMPLETE',
     stTime: 'Play time', stDeaths: 'Failures', stPortals: 'Portals fired', stEchoes: 'Echoes recorded',
     thanks1: 'Test Control thanks you for your cooperation.', thanks2: 'Thanks for playing.', toTitle: 'TAP FOR TITLE',
     gunTitle: 'GRAVITY GUN', gunSub: 'Grab, carry, throw', chamber: 'CHAMBER', allDone: 'ALL CHAMBERS COMPLETE', done: 'CHAMBER COMPLETE',
@@ -900,16 +1031,25 @@ const TXT = {
       ['Double Throw', 'Two cubes, two switches: one belongs on top of the ceiling, throw it through the hole. The other goes into the cell behind the grille, via a portal under the ceiling and one on the cell ceiling.', 'Double cubes, double joy. Joy is optional.'],
       ['Light Walk', "The bridge is higher than the floor. You can't push a cube up there, so carry it and jump.", 'Please do not jump onto light bridges with cargo. Fine, just this once.'],
       ['Sentry', 'Hold the cube as a shield to the left and record yourself walking to the laser. Then you can throw the cube onto the shelf while your echo blocks the beam.', 'Your echo stands in the laser voluntarily. Voluntary is relative.'],
-      ['Gravity', 'Finale. Punt the cube out of the cell through a portal that spits it out at the ceiling. Then carry it above your head through the laser curtain to the switch.', 'Final chamber. We are almost a little moved. Almost.']
+      ['Gravity', 'Finale. Punt the cube out of the cell through a portal that spits it out at the ceiling. Then carry it above your head through the laser curtain to the switch.', 'Final chamber. We are almost a little moved. Almost.'],
+      ['Line of Sight', 'New: turrets. Whatever the red beam catches gets shot after a short charge. A cube blocks its view. Push it ahead of you and jump down behind the turret. It cannot see behind itself.', 'Security protocol active. These devices protect the facility. From you.'],
+      ['Self-Talk', 'Turrets shoot at everything they see, themselves included. Redirect its gaze with two portals so it looks down onto its own head.', 'This model is extremely self-critical. Use that.'],
+      ['Volunteer', 'The switch is in the turret\'s line of sight, and there is no way back up. Record yourself jumping onto the switch and stop the recording right away. Your echo is immune and stays put.', 'We are looking for a volunteer. You just signed up.'],
+      ['Relocation', 'A turret you carry looks wherever you aim. Set it down below so it sees its colleague. Two turrets that see each other shoot each other.', 'Turrets know no collegiality. Neither do we.'],
+      ['Ricochet', 'Two turrets, two floors, two white walls. Link the walls so each turret sees the other. Then the lower corridor is clear.', 'Please introduce the two of them. It will be brief.'],
+      ['Disposal', 'From above it cannot see you. Grab it through the hole in the floor and throw it away. A thrown turret shuts down.', 'Turrets are facility property. Please handle them with care. Or not.'],
+      ['Decoy', 'On the ledge the turret\'s beam catches you. If your echo stands on the pedestal, it blocks the beam. Record yourself jumping onto the pedestal and stop the recording quickly.', 'Your echo is modelling. The turret is delighted.'],
+      ['Crossfire', 'The door separates two turrets that must not see each other. Or maybe they should. Throw the cube onto the high switch and wait before you go down.', 'Two turrets, one door. We have provided popcorn.']
     ]
   }
 };
 let LANG = (() => { try { const s = localStorage.getItem('loops-lang'); if (s === 'de' || s === 'en') return s; } catch (e) {} return /^de\b/i.test(navigator.language || '') ? 'de' : 'en'; })();
 const tr = key => (TXT[LANG][key] !== undefined ? TXT[LANG][key] : TXT.de[key]);
 const pickTxt = key => { const a = tr(key); return a[Math.random() * a.length | 0]; };
-const lvName = i => LANG === 'en' ? TXT.en.levels[i][0] : LEVELS[i].name;
-const lvHint = i => LANG === 'en' ? TXT.en.levels[i][1] : LEVELS[i].hint;
-const lvQuip = i => LANG === 'en' ? (TXT.en.levels[i][2] || TXT.en.QUIPS[i] || '') : (LEVELS[i].quip || QUIPS[i] || '');
+const enLv = i => LANG === 'en' && TXT.en.levels[i];
+const lvName = i => enLv(i) ? TXT.en.levels[i][0] : LEVELS[i].name;
+const lvHint = i => enLv(i) ? TXT.en.levels[i][1] : LEVELS[i].hint;
+const lvQuip = i => enLv(i) ? (TXT.en.levels[i][2] || TXT.en.QUIPS[i] || '') : (LEVELS[i].quip || QUIPS[i] || '');
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -934,7 +1074,7 @@ try { unlocked = Math.max(1, Math.min(LEVELS.length, parseInt(localStorage.getIt
 
 // ---------- level ----------
 function makeBody(kind, x, y) {
-  const s = kind === 'player' ? { w: 20, h: 28 } : { w: 24, h: 24 };
+  const s = kind === 'player' ? { w: 20, h: 28 } : kind === 'turret' ? { w: 16, h: 26 } : { w: 24, h: 24 };
   return { kind, x, y, w: s.w, h: s.h, vx: 0, vy: 0, onGround: false, vang: 0, sx: x, sy: y, coyote: 0, jumpBuf: 0 };
 }
 let lastLoaded = -1, idleT = 0, gunTaken = false;
@@ -968,13 +1108,14 @@ function loadLevel(i) {
     vx: (Math.random() - 0.5) * 8, vy: -2 - Math.random() * 6, ph: Math.random() * 6.28, s: 0.6 + Math.random() * 1.2 });
   doorOpen = false; doorT = 0; doorOpen2 = false; doorT2 = 0; pressed = false;
   state = 'play'; winTimer = 0; introT = 2.4;
-  if (typeof camReset === 'function') { cine = null; camReset(); visor = 1; saveStats(); }
+  if (typeof camReset === 'function') { cine = null; camReset(); visor = 1; saveStats(); Snd.stopSong(); }
   gunTaken = false;
   if (typeof say === 'function') say(i === lastLoaded && LEVELS[i] ? pickTxt('RETRY') : lvQuip(i), 2.6, 1.2); lastLoaded = i; idleT = 0;
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const c = grid[y][x];
     if (c === 'P') { player = makeBody('player', x * T + T / 2, (y + 1) * T - 14); grid[y][x] = '.'; }
     if (c === 'C') { bodies.push(makeBody('cube', x * T + T / 2, (y + 1) * T - 12)); grid[y][x] = '.'; }
+    if (c === 'T' || c === 'Y') { const t = makeBody('turret', x * T + T / 2, (y + 1) * T - 13); t.face = c === 'T' ? 1 : -1; t.alive = true; t.charge = 0; t.cool = 0; t.segs = []; bodies.push(t); grid[y][x] = '.'; }
   }
   bodies.unshift(player);
   echo = null; recording = null; crashT = 0;
@@ -1043,7 +1184,10 @@ function moveX(b, dx, pushed) {
         o.vx = Math.max(-RUN, Math.min(RUN, dx / STEP));
       }
     }
-    if (pushed) continue; // the pusher resolves its own overlap
+    if (pushed) { // the pusher resolves its own overlap; a shoved body stops at anything else it runs into
+      if (o.kind !== 'player' && o.kind !== 'echo' && overlap(b, o)) { b.x = dx > 0 ? o.x - o.w / 2 - b.w / 2 : o.x + o.w / 2 + b.w / 2; b.vx = 0; }
+      continue;
+    }
     if (overlap(b, o) && (dx > 0 ? b.x <= o.x : b.x >= o.x)) {
       b.x = dx > 0 ? o.x - o.w / 2 - b.w / 2 : o.x + o.w / 2 + b.w / 2;
     }
@@ -1099,6 +1243,7 @@ function tryTeleport(b) {
       b.vx += (Math.random() < 0.5 ? -1 : 1) * 70;
     }
     b.vang = wrapAng(b.vang + ang);
+    if (b.kind === 'turret' && q.n.x !== 0) b.face = q.n.x > 0 ? 1 : -1;
     if (b.held) releaseHeld(b);
     if (b.heldBy) releaseHeld(b.heldBy);
     b.portalT = (q.n.x !== 0 || Math.hypot(b.vx, b.vy) > 320) ? 0.22 : 0; // keep momentum out of walls and real flings, not small floor hops
@@ -1212,70 +1357,123 @@ function traceBridges() {
 }
 
 // forgiving hitboxes: lasers graze past the player's edges, held cubes shield a bit wider
-const slack = b => b.kind === 'player' ? -4 : b.heldBy ? 4 : 0;
+const slack = b => b.kind === 'player' ? -4 : b.heldBy ? 4 : 0;  // turrets use their exact box
+// Trace a beam along a grid axis, through portals; stopped by walls, bridges and bodies.
+// Returns the drawn segments, the body it hit (if any) and the receiver cell it reached (if any).
+function traceRay(x, y, dx, dy, skip) {
+  const segs = []; let who = null, recv = null;
+  for (let seg = 0; seg < 10; seg++) {
+    let cx = Math.floor((x + dx * 0.5) / T), cy = Math.floor((y + dy * 0.5) / T), endX, endY, hitCell = null;
+    for (let i = 0; i < 64; i++) {
+      const c = charAt(cx, cy);
+      if (blocksLaser(c)) {
+        hitCell = [cx, cy, c];
+        endX = dx > 0 ? cx * T : dx < 0 ? (cx + 1) * T : x;
+        endY = dy > 0 ? cy * T : dy < 0 ? (cy + 1) * T : y;
+        break;
+      }
+      cx += dx; cy += dy;
+    }
+    if (!hitCell) { endX = x + dx * W; endY = y + dy * H; }
+    // light bridges stop beams
+    let best = Math.abs(endX - x) + Math.abs(endY - y), brHit = false;
+    for (const br of bridges) {
+      let dist = Infinity;
+      if (dx === 0 && x > br.x0 && x < br.x1) dist = ((dy > 0 ? br.y : br.y + BR_H) - y) * dy;
+      else if (dy === 0 && y >= br.y && y <= br.y + BR_H) dist = ((dx > 0 ? br.x0 : br.x1) - x) * dx;
+      if (dist >= 0 && dist < best) { best = dist; brHit = true; }
+    }
+    if (brHit) { endX = x + dx * best; endY = y + dy * best; hitCell = null; }
+    // bodies in the way (the source itself is skipped on the first segment only, so a beam can come back around through portals)
+    for (const b of bodies) {
+      if (b === skip && seg === 0) continue;
+      if (dx !== 0) {
+        if (Math.abs(b.y - y) >= b.h / 2 + slack(b)) continue;
+        const face = dx > 0 ? b.x - b.w / 2 : b.x + b.w / 2, dist = (face - x) * dx;
+        if (dist >= -2 && dist < best && (b.x - x) * dx > 0) { best = Math.max(0, dist); who = b; }
+      } else {
+        if (Math.abs(b.x - x) >= b.w / 2 + slack(b)) continue;
+        const face = dy > 0 ? b.y - b.h / 2 : b.y + b.h / 2, dist = (face - y) * dy;
+        if (dist >= -2 && dist < best && (b.y - y) * dy > 0) { best = Math.max(0, dist); who = b; }
+      }
+    }
+    if (who) { segs.push({ x1: x, y1: y, x2: x + dx * best, y2: y + dy * best, end: 'body' }); break; }
+    segs.push({ x1: x, y1: y, x2: endX, y2: endY, end: hitCell ? hitCell[2] : (brHit ? 'bridge' : 'none') });
+    if (!hitCell) break;
+    if (hitCell[2] === 'R' || hitCell[2] === 'r') { recv = hitCell; break; }
+    // through a portal?
+    const pr = pair(); let through = false;
+    if (pr && hitCell[2] === 'W') for (const p of pr) {
+      if (p.n.x !== -dx || p.n.y !== -dy) continue;
+      if (!p.cells.some(c => c[0] === hitCell[0] && c[1] === hitCell[1])) continue;
+      const q = partner(p), ang = portalAngle(p, q), c = Math.round(Math.cos(ang)), sn = Math.round(Math.sin(ang));
+      const rx = endX - p.c.x, ry = endY - p.c.y;
+      x = q.c.x + c * rx - sn * ry; y = q.c.y + sn * rx + c * ry;
+      const ndx = c * dx - sn * dy, ndy = sn * dx + c * dy; dx = ndx; dy = ndy;
+      through = true; break;
+    }
+    if (!through) break;
+  }
+  return { segs, who, recv };
+}
+// ---------- turrets ----------
+const TURRET_CHARGE = 0.9, TURRET_MEMORY = 0.5, TURRET_RAYS = [0, -22, -44];
+const turretEye = t => ({ x: t.x + t.face * 8, y: t.y - 5 });
+const turretTarget = (t, w, ri) => !!w && (w.kind === 'player' || w.kind === 'echo' || (w.kind === 'turret' && w.alive && !ri)); // only the main sight line spots other turrets
+function disableTurret(t) {
+  if (!t.alive) return;
+  t.alive = false; t.charge = 0; t.segs = [];
+  burst(t.x, t.y - 4, '#ff6a5a', 14); burst(t.x, t.y - 4, '#c9d6e2', 8); Snd.tdown();
+}
+function updateTurrets(dt) {
+  const shots = [];
+  for (const t of bodies) {
+    if (t.kind !== 'turret') continue;
+    if (!t.alive) { t.segs = []; if (Math.random() < dt * 1.5) spark({ x: t.x + (Math.random() - 0.5) * 8, y: t.y - 6, vy: -30, vx: (Math.random() - 0.5) * 40, drag: 2, size: 1.5, life: 0.4, color: '#ffb347' }); continue; }
+    if (t.heldBy) { const [ax] = actorAim(t.heldBy); if (Math.abs(ax) > 0.15) t.face = ax > 0 ? 1 : -1; }
+    // two sight lines: eye height and a bit above, so hopping over the beam does not work
+    const e = turretEye(t), rays = TURRET_RAYS.map(off => traceRay(e.x, e.y + off, t.face, 0, t));
+    t.segs = rays.map(r => r.segs);
+    const hit = rays.find((r, ri) => turretTarget(t, r.who, ri));
+    if (t.cool > 0) { t.cool -= dt; t.charge = Math.max(0, t.charge - dt * 2); continue; }
+    if (state === 'play' && hit) {
+      if (t.charge === 0) Snd.tlock();
+      t.lost = 0;
+      const before = Math.floor(t.charge * 6); t.charge = Math.min(TURRET_CHARGE, t.charge + dt);
+      if (Math.floor(t.charge * 6) !== before) Snd.tbeep(t.charge / TURRET_CHARGE);
+      if (t.charge >= TURRET_CHARGE) shots.push([t, hit.who, hit.segs]);
+    } else if (t.charge > 0) {
+      t.lost = (t.lost || 0) + dt;                 // stays locked on briefly after losing sight, and keeps charging
+      if (t.lost > TURRET_MEMORY || t.charge < TURRET_CHARGE * 0.3) t.charge = Math.max(0, t.charge - dt); // a brief glimpse is forgotten, a real lock is not
+      else t.charge = Math.min(TURRET_CHARGE, t.charge + dt);
+    }
+  }
+  // a turret that is about to be shot and is at least half charged fires back in the same instant
+  for (const [, who] of shots.slice()) {
+    if (who.kind !== 'turret' || !who.alive || shots.some(sh => sh[0] === who) || who.charge < TURRET_CHARGE * 0.5) continue;
+    const e = turretEye(who), back = TURRET_RAYS.map(off => traceRay(e.x, e.y + off, who.face, 0, who)).find((r, ri) => turretTarget(who, r.who, ri));
+    if (back) shots.push([who, back.who, back.segs]);
+  }
+  // all turrets that are ready fire in the same instant
+  for (const [t, who, segs] of shots) {
+    t.charge = 0; t.cool = 0.7;
+    for (const sg of segs) beams.push({ x1: sg.x1, y1: sg.y1, x2: sg.x2, y2: sg.y2, color: '#ffd9d4', life: 0.16, w: 4 });
+    const e = turretEye(t); flashes.push({ x: e.x, y: e.y, color: '#ff6a5a', life: 0.4 });
+    Snd.tfire();
+    if (who === player) { if (state === 'play') { burst(player.x, player.y, '#ff4d4d', 18); die(); } }
+    else if (who.kind === 'echo') burst(who.x, who.y, '#b48cff', 10);
+    else if (who.kind === 'turret') disableTurret(who);
+  }
+}
 function traceLasers() {
   lasers = [];
   for (const r of receivers) r.on = false;
   let hurt = false;
   for (const em of emitters) {
-    let x = em.x * T + T / 2 + em.d[0] * T / 2, y = em.y * T + T / 2 + em.d[1] * T / 2;
-    let dx = em.d[0], dy = em.d[1];
-    for (let seg = 0; seg < 10; seg++) {
-      // walk cells along the axis
-      let cx = Math.floor((x + dx * 0.5) / T), cy = Math.floor((y + dy * 0.5) / T), endX, endY, hitCell = null;
-      for (let i = 0; i < 64; i++) {
-        const c = charAt(cx, cy);
-        if (blocksLaser(c)) {
-          hitCell = [cx, cy, c];
-          endX = dx > 0 ? cx * T : dx < 0 ? (cx + 1) * T : x;
-          endY = dy > 0 ? cy * T : dy < 0 ? (cy + 1) * T : y;
-          break;
-        }
-        cx += dx; cy += dy;
-      }
-      if (!hitCell) { endX = x + dx * W; endY = y + dy * H; }
-      // light bridges stop lasers
-      let best = Math.abs(endX - x) + Math.abs(endY - y), who = null, brHit = false;
-      for (const br of bridges) {
-        let dist = Infinity;
-        if (dx === 0 && x > br.x0 && x < br.x1) dist = ((dy > 0 ? br.y : br.y + BR_H) - y) * dy;
-        else if (dy === 0 && y >= br.y && y <= br.y + BR_H) dist = ((dx > 0 ? br.x0 : br.x1) - x) * dx;
-        if (dist >= 0 && dist < best) { best = dist; brHit = true; }
-      }
-      if (brHit) { endX = x + dx * best; endY = y + dy * best; hitCell = null; }
-      // bodies in the way
-      for (const b of bodies) {
-        if (dx !== 0) {
-          if (Math.abs(b.y - y) >= b.h / 2 + slack(b)) continue;
-          const face = dx > 0 ? b.x - b.w / 2 : b.x + b.w / 2, dist = (face - x) * dx;
-          if (dist >= -2 && dist < best && (b.x - x) * dx > 0) { best = Math.max(0, dist); who = b; }
-        } else {
-          if (Math.abs(b.x - x) >= b.w / 2 + slack(b)) continue;
-          const face = dy > 0 ? b.y - b.h / 2 : b.y + b.h / 2, dist = (face - y) * dy;
-          if (dist >= -2 && dist < best && (b.y - y) * dy > 0) { best = Math.max(0, dist); who = b; }
-        }
-      }
-      if (who) {
-        lasers.push({ x1: x, y1: y, x2: x + dx * best, y2: y + dy * best, end: 'body' });
-        if (who === player) hurt = true;
-        break;
-      }
-      lasers.push({ x1: x, y1: y, x2: endX, y2: endY, end: hitCell ? hitCell[2] : (brHit ? 'bridge' : 'none') });
-      if (!hitCell) break;
-      if (hitCell[2] === 'R' || hitCell[2] === 'r') { const r = receivers.find(g => g.cells.some(c => c[0] === hitCell[0] && c[1] === hitCell[1])); if (r) r.on = true; break; }
-      // through a portal?
-      const pr = pair(); let through = false;
-      if (pr && hitCell[2] === 'W') for (const p of pr) {
-        if (p.n.x !== -dx || p.n.y !== -dy) continue;
-        if (!p.cells.some(c => c[0] === hitCell[0] && c[1] === hitCell[1])) continue;
-        const q = partner(p), ang = portalAngle(p, q), c = Math.round(Math.cos(ang)), sn = Math.round(Math.sin(ang));
-        const rx = endX - p.c.x, ry = endY - p.c.y;
-        x = q.c.x + c * rx - sn * ry; y = q.c.y + sn * rx + c * ry;
-        const ndx = c * dx - sn * dy, ndy = sn * dx + c * dy; dx = ndx; dy = ndy;
-        through = true; break;
-      }
-      if (!through) break;
-    }
+    const res = traceRay(em.x * T + T / 2 + em.d[0] * T / 2, em.y * T + T / 2 + em.d[1] * T / 2, em.d[0], em.d[1], null);
+    lasers.push(...res.segs);
+    if (res.who === player) hurt = true;
+    if (res.recv) { const h = res.recv, r = receivers.find(g => g.cells.some(c => c[0] === h[0] && c[1] === h[1])); if (r) r.on = true; }
   }
   return hurt;
 }
@@ -1336,7 +1534,7 @@ function actorAim(a) {
 function findCube(a, dx, dy, range) {
   let best = null, bd = 1e9;
   for (const c of bodies) {
-    if (c.kind !== 'cube' || (c.heldBy && c.heldBy !== a)) continue;
+    if ((c.kind !== 'cube' && c.kind !== 'turret') || (c.heldBy && c.heldBy !== a)) continue;
     const vx = c.x - a.x, vy = c.y - (a.y - 3), d = Math.hypot(vx, vy) || 1;
     if (d > range) continue;
     if ((vx * dx + vy * dy) / d < 0.8 && d > 34) continue;
@@ -1365,6 +1563,7 @@ function gravThrow(a) {
   if (c.heldBy) releaseHeld(c.heldBy);
   c.vx = dx * THROW_V + a.vx * 0.3; c.vy = dy * THROW_V + a.vy * 0.3;
   c.noHit = a; c.noHitT = 0.25; // fly past the thrower
+  if (c.kind === 'turret' && c.alive) disableTurret(c);
   burst(c.x, c.y, '#ffb347', 14); Snd.throw(); gravPulse(a, dx, dy, Math.hypot(c.x - a.x, c.y - a.y) + 30);
 }
 function gravPulse(a, dx, dy, len) {
@@ -1419,6 +1618,7 @@ let rewindFx = 0;
 
 function die() {
   recording = null;
+  for (const t of bodies) if (t.kind === 'turret') { t.charge = 0; t.cool = 0; t.lost = 0; }
   burst(player.x, player.y, '#b8ff6a', 22);
   player.x = player.sx; player.y = player.sy; player.vx = player.vy = 0; player.vang = 0;
   deathFlash = 0.35; trail = [];
@@ -1462,7 +1662,7 @@ function step(dt) {
   updateHeld(dt);
   for (const b of bodies) if (b.noHitT > 0) b.noHitT -= dt;
   for (const b of bodies) {
-    if (b.kind === 'cube' && b.onGround && !b.heldBy) b.vx = approach(b.vx, 0, 1800 * dt);
+    if ((b.kind === 'cube' || b.kind === 'turret') && b.onGround && !b.heldBy) b.vx = approach(b.vx, 0, 1800 * dt);
     if (!b.heldBy) b.vy = Math.min(b.vy + GRAV * dt, VMAX);
     b.vx = Math.max(-VMAX, Math.min(VMAX, b.vx));
     const wasGround = b.onGround, fallV = b.vy;
@@ -1487,11 +1687,13 @@ function step(dt) {
     if (acid || b.y > H + 60) {
       if (b.kind === 'player') die();
       else if (b.kind === 'echo') { burst(b.x, b.y, '#b48cff', 16); b.dead = true; }
+      else if (b.kind === 'turret') { if (b.heldBy) releaseHeld(b.heldBy); burst(b.x, b.y, '#b8ff6a', 18); burst(b.x, b.y, '#ff6a5a', 8); b.dead = true; if (b.alive) Snd.tdown(); }
       else { if (b.heldBy) releaseHeld(b.heldBy); burst(b.x, b.y, '#b8ff6a', 14); b.x = b.sx; b.y = b.sy; b.vx = b.vy = 0; b.vang = 0; }
     }
   }
 
   if (echo && echo.dead) { bodies = bodies.filter(b => b !== echo); echo = null; }
+  if (bodies.some(b => b.kind === 'turret' && b.dead)) bodies = bodies.filter(b => !(b.kind === 'turret' && b.dead));
   // button + door
   for (const g of btnGroups) g.on = false;
   let inDoor = false, inDoor2 = false;
@@ -1508,6 +1710,7 @@ function step(dt) {
   const wasPowered = receivers.map(r => r.on);
   const hurt = traceLasers();
   if (hurt && state === 'play') { burst(player.x, player.y, '#ff4d4d', 18); die(); }
+  updateTurrets(dt);
   receivers.forEach((r, i) => { if (r.on && !wasPowered[i]) { for (const [x, y] of r.cells) burst(x * T + T / 2, y * T + T / 2, '#7be08a', 6); Snd.power(); } });
   for (const l of lasers) if (l.end !== 'none' && Math.random() < 0.5)
     spark({ x: l.x2, y: l.y2, vx: (Math.random() - 0.5) * 120, vy: (Math.random() - 0.5) * 120, drag: 3, size: 1.5, life: 0.25, color: '#ff6a5a' });
@@ -1531,6 +1734,7 @@ function step(dt) {
       if (p.x + p.w / 2 > cx * T + 6 && p.x - p.w / 2 < (cx + 1) * T - 6 && p.y + p.h / 2 > (cy - 1) * T && p.y - p.h / 2 < (cy + 1) * T) {
         state = 'win'; winTimer = 2.8; burst(p.x, p.y, '#7be08a', 26); Snd.win();
         if (li === LEVELS.length - 1) { beginOutro(); renderDots(); break; }
+        if (li === 47 && LEVELS[48]) { if (unlocked < 49) { unlocked = 49; try { localStorage.setItem('portalschleife-unlocked', '49'); } catch (e) {} } state = 'alarm'; cine = { kind: 'alarm', t: 0, cues: {} }; subtitle = null; renderDots(); break; }
         if (grid[cy][cx] === 'K') { gunTaken = true; state = 'gunget'; cine = { kind: 'gun', t: 0, cues: {} }; subtitle = null; }
         else say(li + 1 < LEVELS.length ? pickTxt('WIN') : tr('lastWin'), 4);
         if (li + 2 > unlocked) { unlocked = Math.min(LEVELS.length, li + 2); try { localStorage.setItem('portalschleife-unlocked', String(unlocked)); } catch (e) {} }
@@ -1941,7 +2145,27 @@ function clipFront(p) {
 function drawBodyShape(b) {
   ctx.save();
   ctx.translate(b.x, b.y); ctx.rotate(b.vang);
-  if (b.kind === 'cube') {
+  if (b.kind === 'turret') {
+    const f = b.face || 1, k = b.alive ? Math.min(1, (b.charge || 0) / TURRET_CHARGE) : 0;
+    if (!b.alive) { ctx.translate(0, 3); ctx.rotate(f * 0.45); }
+    // tripod legs
+    ctx.strokeStyle = '#2b3541'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-2, 6); ctx.lineTo(-7, 13); ctx.moveTo(2, 6); ctx.lineTo(7, 13); ctx.moveTo(0, 7); ctx.lineTo(0, 13); ctx.stroke();
+    // shell
+    rr(-7.8, -13.8, 15.6, 22.6, 7.6); ctx.fillStyle = '#3a4654'; ctx.fill();
+    rr(-7, -13, 14, 21, 7); ctx.fillStyle = '#e8edf1'; ctx.fill();
+    ctx.fillStyle = '#c3ccd4'; ctx.fillRect(f > 0 ? -7 : 4, -8, 3, 12);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(-4, -12, 6, 1.2);
+    // side guns
+    ctx.fillStyle = '#4a5765'; ctx.fillRect(f > 0 ? 5 : -9, -2, 4, 3); ctx.fillRect(f > 0 ? 5 : -9, 2, 4, 2);
+    // eye
+    const ex = f * 2.5, ey = -5;
+    ctx.fillStyle = '#16202a'; ctx.beginPath(); ctx.arc(ex, ey, 3.6, 0, Math.PI * 2); ctx.fill();
+    if (b.alive) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(ex, ey, 8 + k * 8, `rgba(255,70,50,${0.5 + 0.5 * k})`, 1); ctx.restore(); ctx.globalAlpha = 1;
+      ctx.fillStyle = k > 0 ? '#ff8a7a' : '#ff4a3a'; ctx.beginPath(); ctx.arc(ex, ey, 2.2 + k * 0.6, 0, Math.PI * 2); ctx.fill();
+    } else { ctx.fillStyle = '#3a2226'; ctx.beginPath(); ctx.arc(ex, ey, 2, 0, Math.PI * 2); ctx.fill(); }
+  } else if (b.kind === 'cube') {
     rr(-12.5, -12.5, 25, 25, 4); ctx.fillStyle = '#3a4450'; ctx.fill();      // dark outline
     rr(-12, -12, 24, 24, 4); ctx.fillStyle = '#9aa6b2'; ctx.fill();
     rr(-8, -8, 16, 16, 2.5); ctx.fillStyle = '#c3ccd5'; ctx.fill();          // face
@@ -2224,6 +2448,25 @@ function drawLaserTiles() {
     ctx.fillStyle = r.on ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.arc(x + T / 2 - 2, y + T / 2 - 2, 1.8, 0, Math.PI * 2); ctx.fill();
   }
 }
+function drawTurretBeams() {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  for (const t of bodies) {
+    if (t.kind !== 'turret' || !t.alive || !t.segs) continue;
+    const k = Math.min(1, t.charge / TURRET_CHARGE), fl = k > 0 ? (0.75 + 0.25 * Math.sin(time * (20 + k * 30))) : 1;
+    t.segs.forEach((ray, ri) => {
+      const main = ri === 0;
+      for (const sg of ray) {
+        ctx.beginPath(); ctx.moveTo(sg.x1, sg.y1); ctx.lineTo(sg.x2, sg.y2);
+        if (k > 0 && main) { ctx.globalAlpha = 0.25 * k * fl; ctx.strokeStyle = '#ff3b2f'; ctx.lineWidth = 6 + k * 4; ctx.stroke(); }
+        ctx.globalAlpha = (main ? 0.22 + 0.6 * k : 0.08 + 0.3 * k) * fl; ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = main ? 0.8 + k * 1.6 : 0.7 + k * 0.6;
+        if (!main) ctx.setLineDash([3, 5]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      const last = ray[ray.length - 1];
+      if (main && last && last.end !== 'none') glowDot(last.x2, last.y2, 6 + k * 8, 'rgba(255,80,60,0.6)', 0.6 + 0.4 * k);
+    });
+  }
+  ctx.restore(); ctx.globalAlpha = 1;
+}
 function drawLasers() {
   if (!lasers.length && !receivers.length) return;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
@@ -2388,7 +2631,7 @@ function endIntro() {
   if (!subtitle) say(lvQuip(0), 2.6, 0.6);
 }
 function beginOutro() { state = 'outro'; cine = { kind: 'outro', t: 0, cues: {} }; saveStats(); }
-function toCredits() { state = 'credits'; cine = { kind: 'credits', t: 0, cues: {} }; subtitle = null; cam.z = 1; cam.pix = 1; cam.fade = 0; Snd.win(); }
+function toCredits() { state = 'credits'; cine = { kind: 'credits', t: 0, cues: {} }; subtitle = null; cam.z = 1; cam.pix = 1; cam.fade = 0; Snd.song(); }
 function cineInput() {
   if (!cine) return false;
   if (cine.kind === 'title' && cine.t > 0.4) { Snd.init(); beginIntro(); }
@@ -2396,6 +2639,7 @@ function cineInput() {
   else if (cine.kind === 'outro' && cine.t > 1) toCredits();
   else if (cine.kind === 'credits' && cine.t > 1.6) startTitle();
   else if (cine.kind === 'gun' && cine.t > 1) { cine.t = Math.max(cine.t, 4.4); }
+  else if (cine.kind === 'alarm' && cine.t > 1) { cine.t = Math.max(cine.t, 6.6); subtitle = null; }
   return true;
 }
 
@@ -2440,6 +2684,16 @@ function updateCine(dt) {
     if (t > 10.4) toCredits();
   } else if (c.kind === 'credits') {
     cam.bars = 0; cam.fade = 0;
+  } else if (c.kind === 'alarm') {
+    if (t > 0.2) once('s1', () => say(tr('alarm1'), 1.0));
+    if (t > 3.0) once('s2', () => say(tr('alarm2'), 1.4));
+    if (t > 2.8) { const n = Math.floor((t - 2.8) / 0.9); once('sir' + n, () => Snd.siren()); }
+    const a = easeIO(clamp01(t / 1.8)), u = clamp01((t - 6.6) / 1.2);
+    const shake = t > 2.8 && t < 6.6 ? 1.6 : 0;
+    camOn(lerp(W / 2, hx, a) + (Math.random() - 0.5) * shake, lerp(H / 2, hy, a) + (Math.random() - 0.5) * shake, lerp(1, 3, a) * (1 - u) + 1.4 * u, lerp(1, 20, u * u));
+    cam.bars = 1; cam.fade = clamp01((t - 7.4) / 0.5);
+    visor = t > 2.8 ? (Math.sin(t * 7) > 0 ? 1 : 0) : 1;
+    if (t > 8.0) loadLevel(48);
   } else if (c.kind === 'gun') {
     const inA = easeIO(clamp01(t / 0.8)), outA = easeIO(clamp01((t - 4.4) / 0.7));
     const a = t < 4.4 ? inA : 1 - outA;
@@ -2549,7 +2803,14 @@ function drawCineOverlay() {
     ctx.globalAlpha = a * (0.55 + 0.45 * Math.sin(t * 3.2));
     ctx.fillStyle = '#e3e9ee'; ctx.font = '700 15px "Chakra Petch", "Arial Narrow", sans-serif';
     ctx.fillText(tr('start'), W / 2, H * 0.78);
-  } else if (cine.kind === 'intro' || cine.kind === 'outro' || cine.kind === 'gun') {
+  } else if (cine.kind === 'alarm' && t > 2.8 && t < 7.4) {
+    const p = 0.5 + 0.5 * Math.sin((t - 2.8) * Math.PI * 2 / 0.9);
+    ctx.fillStyle = `rgba(255,20,30,${0.10 + 0.22 * p})`; ctx.fillRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, H * 0.75); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(120,0,0,${0.35 + 0.25 * p})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (p > 0.35) { ctx.fillStyle = 'rgba(8,4,6,0.75)'; ctx.fillRect(0, H * 0.13, W, 44); ctx.fillStyle = '#ff4d4d'; ctx.font = '700 24px "Chakra Petch", "Arial Narrow", sans-serif'; ctx.fillText(tr('alarmBanner'), W / 2, H * 0.13 + 22); }
+    ctx.globalAlpha = 0.45; ctx.fillStyle = '#c9d6e2'; ctx.font = '500 10px "IBM Plex Mono", monospace'; ctx.textAlign = 'right'; ctx.fillText(tr('skip'), W - 14, H * 0.05);
+  } else if (cine.kind === 'intro' || cine.kind === 'outro' || cine.kind === 'gun' || cine.kind === 'alarm') {
     ctx.globalAlpha = 0.45; ctx.fillStyle = '#c9d6e2'; ctx.font = '500 10px "IBM Plex Mono", monospace'; ctx.textAlign = 'right';
     if (t > 1) ctx.fillText(tr('skip'), W - 14, H * 0.05);
   } else if (cine.kind === 'credits') {
@@ -2558,7 +2819,7 @@ function drawCineOverlay() {
     ctx.globalAlpha = clamp01(t / 0.4);
     drawLogo(W / 2, H * 0.2, 52);
     ctx.textAlign = 'center';
-    line(tr('allDone48'), H * 0.2 + 44, 0.4, '700 15px "Chakra Petch", "Arial Narrow", sans-serif', '#7be08a');
+    line(tr('allDone48').replace('{n}', LEVELS.length), H * 0.2 + 44, 0.4, '700 15px "Chakra Petch", "Arial Narrow", sans-serif', '#7be08a');
     const rows = [[tr('stTime'), fmtTime(stats.time)], [tr('stDeaths'), String(stats.deaths)], [tr('stPortals'), String(stats.portals)], [tr('stEchoes'), String(stats.echoes)]];
     rows.forEach(([a, b], i) => {
       const y = H * 0.42 + i * 26, al = clamp01((t - 0.9 - i * 0.25) / 0.4); if (al <= 0) return;
@@ -2584,6 +2845,7 @@ function render() {
   drawLights();
   drawBridges();
   drawLasers();
+  drawTurretBeams();
   for (const p of [portals.blue, portals.orange]) if (p) drawPortalBack(p);
   drawTrail();
   drawGravBeams();
@@ -2591,7 +2853,7 @@ function render() {
   for (let i = bodies.length - 1; i >= 0; i--) drawBody(bodies[i]);
   for (const p of [portals.blue, portals.orange]) if (p) drawPortalRim(p);
   for (const bm of beams) {
-    ctx.globalAlpha = bm.life / 0.16; ctx.strokeStyle = bm.color; ctx.lineWidth = 2;
+    ctx.globalAlpha = bm.life / 0.16; ctx.strokeStyle = bm.color; ctx.lineWidth = bm.w || 2;
     ctx.beginPath(); ctx.moveTo(bm.x1, bm.y1); ctx.lineTo(bm.x2, bm.y2); ctx.stroke();
   }
   drawParticles();
