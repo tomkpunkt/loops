@@ -2088,7 +2088,7 @@ function drawLights() {
 function drawTrail() {
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const t of trail) {
-    const a = (t.life / 0.22) * Math.min(1, (t.sp - 430) / 300) * 0.28;
+    const a = (t.life / 0.22) * Math.min(1, (t.sp - 430) / 300) * 0.14;
     ctx.globalAlpha = a; ctx.fillStyle = '#9cc8ff';
     ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(t.vang); rr(-8, -13, 16, 26, 6); ctx.fill(); ctx.restore();
   }
