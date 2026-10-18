@@ -229,6 +229,7 @@ const Snd = (() => {
     tlock() { tone({ f: 990, type: 'square', dur: 0.05, vol: 0.05 }); tone({ f: 1320, type: 'square', dur: 0.06, vol: 0.05, delay: 0.07 }); },
     tbeep(k) { tone({ f: 700 + k * 900, type: 'square', dur: 0.03, vol: 0.035 }); },
     tfire() { noise({ dur: 0.18, vol: 0.2, freq: 1800, f2: 300 }); tone({ f: 220, f2: 60, type: 'sawtooth', dur: 0.2, vol: 0.09 }); },
+    tbuzz() { tone({ f: 90 + Math.random() * 40, f2: 70, type: 'sawtooth', dur: 0.32, vol: 0.035 }); tone({ f: 180 + Math.random() * 60, type: 'square', dur: 0.18, vol: 0.015, delay: 0.05 }); noise({ dur: 0.25, vol: 0.05, freq: 3500, q: 6 }); },
     tdown() { tone({ f: 600, f2: 80, type: 'square', dur: 0.5, vol: 0.06 }); },
     drop() { tone({ f: 380, f2: 160, type: 'triangle', dur: 0.15, vol: 0.06 }); },
     throw() { tone({ f: 600, f2: 120, type: 'sawtooth', dur: 0.2, vol: 0.09 }); noise({ dur: 0.25, vol: 0.12, freq: 900, f2: 200, type: 'lowpass' }); },
@@ -1424,6 +1425,18 @@ function traceRay(x, y, dx, dy, skip) {
 // ---------- turrets ----------
 const TURRET_CHARGE = 0.9, TURRET_MEMORY = 0.5, TURRET_RAYS = [0, -22, -44];
 const turretEye = t => ({ x: t.x + t.face * 8, y: t.y - 5 });
+const CONE_AHEAD = 40; // the upper sight lines begin this far ahead of the eye, so the view widens like a cone
+function turretRays(t) {
+  const e = turretEye(t);
+  return TURRET_RAYS.map((off, i) => {
+    if (!i) return traceRay(e.x, e.y, t.face, 0, t);
+    const sx = e.x + t.face * CONE_AHEAD * (-off / 44), sy = e.y + off;
+    if (blocksRay(charAt(Math.floor(sx / T), Math.floor(sy / T)))) return { segs: [], who: null, recv: null, blocked: true };
+    // a wall between the eye and the cone start also blocks this line
+    for (let k = 1; k <= 4; k++) { const px = e.x + (sx - e.x) * k / 4, py = e.y + (sy - e.y) * k / 4; if (blocksRay(charAt(Math.floor(px / T), Math.floor(py / T)))) return { segs: [], who: null, recv: null, blocked: true }; }
+    const r = traceRay(sx, sy, t.face, 0, t); r.from = { x: sx, y: sy }; return r;
+  });
+}
 const turretTarget = (t, w, ri) => !!w && (w.kind === 'player' || w.kind === 'echo' || (w.kind === 'turret' && w.alive && !ri)); // only the main sight line spots other turrets
 function disableTurret(t) {
   if (!t.alive) return;
@@ -1434,11 +1447,17 @@ function updateTurrets(dt) {
   const shots = [];
   for (const t of bodies) {
     if (t.kind !== 'turret') continue;
-    if (!t.alive) { t.segs = []; if (Math.random() < dt * 1.5) spark({ x: t.x + (Math.random() - 0.5) * 8, y: t.y - 6, vy: -30, vx: (Math.random() - 0.5) * 40, drag: 2, size: 1.5, life: 0.4, color: '#ffb347' }); continue; }
+    if (!t.alive) {
+      t.segs = [];
+      if (Math.random() < dt * 4) spark({ x: t.x + (Math.random() - 0.5) * 10, y: t.y - 8, vy: -40 - Math.random() * 40, vx: (Math.random() - 0.5) * 90, g: 300, drag: 1, size: 1.4, life: 0.45, color: Math.random() < 0.5 ? '#9cd2ff' : '#ffd59a' });
+      t.buzzT = (t.buzzT === undefined ? Math.random() * 2 : t.buzzT) - dt;
+      if (t.buzzT <= 0) { t.buzzT = 1.2 + Math.random() * 2.2; if (state === 'play') Snd.tbuzz(); for (let i = 0; i < 6; i++) spark({ x: t.x, y: t.y - 6, vx: (Math.random() - 0.5) * 160, vy: -Math.random() * 120, g: 400, drag: 1, size: 1.6, life: 0.35, color: '#bfe3ff' }); }
+      continue;
+    }
     if (t.heldBy) { const [ax] = actorAim(t.heldBy); if (Math.abs(ax) > 0.15) t.face = ax > 0 ? 1 : -1; }
     // two sight lines: eye height and a bit above, so hopping over the beam does not work
-    const e = turretEye(t), rays = TURRET_RAYS.map(off => traceRay(e.x, e.y + off, t.face, 0, t));
-    t.segs = rays.map(r => r.segs);
+    const rays = turretRays(t);
+    t.segs = rays.map(r => r.segs); t.rayFrom = rays.map(r => r.from || null);
     const hit = rays.find((r, ri) => turretTarget(t, r.who, ri));
     if (t.cool > 0) { t.cool -= dt; t.charge = Math.max(0, t.charge - dt * 2); continue; }
     if (state === 'play' && hit) {
@@ -1456,13 +1475,17 @@ function updateTurrets(dt) {
   // a turret that is about to be shot and is at least half charged fires back in the same instant
   for (const [, who] of shots.slice()) {
     if (who.kind !== 'turret' || !who.alive || shots.some(sh => sh[0] === who) || who.charge < TURRET_CHARGE * 0.5) continue;
-    const e = turretEye(who), back = TURRET_RAYS.map(off => traceRay(e.x, e.y + off, who.face, 0, who)).find((r, ri) => turretTarget(who, r.who, ri));
+    const back = turretRays(who).find((r, ri) => turretTarget(who, r.who, ri));
     if (back) shots.push([who, back.who, back.segs]);
   }
   // all turrets that are ready fire in the same instant
   for (const [t, who, segs] of shots) {
     t.charge = 0; t.cool = 0.7;
-    for (const sg of segs) beams.push({ x1: sg.x1, y1: sg.y1, x2: sg.x2, y2: sg.y2, color: '#ffd9d4', life: 0.16, w: 4 });
+    { const e0 = turretEye(t); segs.forEach((sg, k) => {
+      const x1 = k ? sg.x1 : e0.x, y1 = k ? sg.y1 : e0.y, last = k === segs.length - 1;
+      const x2 = last && who ? who.x : sg.x2, y2 = last && who ? who.y - 2 : sg.y2;
+      beams.push({ x1, y1, x2, y2, color: '#ffd9d4', life: 0.16, w: 4 }); beams.push({ x1, y1, x2, y2, color: '#ff5a4a', life: 0.22, w: 9 });
+    }); }
     const e = turretEye(t); flashes.push({ x: e.x, y: e.y, color: '#ff6a5a', life: 0.4 });
     Snd.tfire();
     if (who === player) { if (state === 'play') { burst(player.x, player.y, '#ff4d4d', 18); die(); } }
@@ -1563,12 +1586,12 @@ function gravThrow(a) {
   if (!LEVELS[li].grav || state !== 'play') return;
   const [dx, dy] = actorAim(a);
   if (a === player && recording) recording.pendingG.push({ k: 't', dx, dy });
-  const c = a.held || findCube(a, dx, dy, 120);
+  const c = a.held || findCube(a, dx, dy, 120), wasHeld = !!a.held;
   if (!c) { Snd.fail(); gravPulse(a, dx, dy, 90); return; }
   if (c.heldBy) releaseHeld(c.heldBy);
   c.vx = dx * THROW_V + a.vx * 0.3; c.vy = dy * THROW_V + a.vy * 0.3;
   c.noHit = a; c.noHitT = 0.25; // fly past the thrower
-  if (c.kind === 'turret' && c.alive) disableTurret(c);
+  if (c.kind === 'turret' && c.alive && wasHeld) c.thrown = 0.8;  // breaks if it lands hard; a punt just shoves it
   burst(c.x, c.y, '#ffb347', 14); Snd.throw(); gravPulse(a, dx, dy, Math.hypot(c.x - a.x, c.y - a.y) + 30);
 }
 function gravPulse(a, dx, dy, len) {
@@ -1670,11 +1693,16 @@ function step(dt) {
     if ((b.kind === 'cube' || b.kind === 'turret') && b.onGround && !b.heldBy) b.vx = approach(b.vx, 0, 1800 * dt);
     if (!b.heldBy) b.vy = Math.min(b.vy + GRAV * dt, VMAX);
     b.vx = Math.max(-VMAX, Math.min(VMAX, b.vx));
-    const wasGround = b.onGround, fallV = b.vy;
+    const wasGround = b.onGround, fallV = b.vy, vx0 = b.vx;
     b.onGround = false;
     moveX(b, b.vx * dt);
     moveY(b, b.vy * dt);
     { const ox = b.x, oy = b.y; tryTeleport(b); if (Math.abs(b.x - ox) > 40 || Math.abs(b.y - oy) > 40) { if (b === player) trail = []; } }
+    if (b.kind === 'turret' && b.thrown > 0) {
+      b.thrown -= dt;
+      const hitWall = Math.abs(b.vx) < 40 && Math.abs(vx0) > 300;
+      if ((b.onGround && !wasGround && Math.hypot(vx0, fallV) > 330) || hitWall) { b.thrown = 0; if (b.alive) { disableTurret(b); burst(b.x, b.y, '#ffb347', 10); } }
+    }
     if (b.onGround && !wasGround && fallV > 260) { puff(b.x, b.y + b.h / 2, Math.min(14, 3 + fallV / 70 | 0), b.w, 20 + fallV * 0.06); Snd.land(fallV, b.kind); }
     if (b === player) {
       if (b.onGround && Math.abs(b.vx) > 120 && Math.random() < dt * 14) puff(b.x - Math.sign(b.vx) * 6, b.y + b.h / 2, 1, 6, 18);
@@ -2152,24 +2180,55 @@ function drawBodyShape(b) {
   ctx.translate(b.x, b.y); ctx.rotate(b.vang);
   if (b.kind === 'turret') {
     const f = b.face || 1, k = b.alive ? Math.min(1, (b.charge || 0) / TURRET_CHARGE) : 0;
-    if (!b.alive) { ctx.translate(0, 3); ctx.rotate(f * 0.45); }
-    // tripod legs
-    ctx.strokeStyle = '#2b3541'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-2, 6); ctx.lineTo(-7, 13); ctx.moveTo(2, 6); ctx.lineTo(7, 13); ctx.moveTo(0, 7); ctx.lineTo(0, 13); ctx.stroke();
-    // shell
-    rr(-7.8, -13.8, 15.6, 22.6, 7.6); ctx.fillStyle = '#3a4654'; ctx.fill();
-    rr(-7, -13, 14, 21, 7); ctx.fillStyle = '#e8edf1'; ctx.fill();
-    ctx.fillStyle = '#c3ccd4'; ctx.fillRect(f > 0 ? -7 : 4, -8, 3, 12);
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(-4, -12, 6, 1.2);
-    // side guns
-    ctx.fillStyle = '#4a5765'; ctx.fillRect(f > 0 ? 5 : -9, -2, 4, 3); ctx.fillRect(f > 0 ? 5 : -9, 2, 4, 2);
-    // eye
-    const ex = f * 2.5, ey = -5;
-    ctx.fillStyle = '#16202a'; ctx.beginPath(); ctx.arc(ex, ey, 3.6, 0, Math.PI * 2); ctx.fill();
-    if (b.alive) {
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(ex, ey, 8 + k * 8, `rgba(255,70,50,${0.5 + 0.5 * k})`, 1); ctx.restore(); ctx.globalAlpha = 1;
-      ctx.fillStyle = k > 0 ? '#ff8a7a' : '#ff4a3a'; ctx.beginPath(); ctx.arc(ex, ey, 2.2 + k * 0.6, 0, Math.PI * 2); ctx.fill();
-    } else { ctx.fillStyle = '#3a2226'; ctx.beginPath(); ctx.arc(ex, ey, 2, 0, Math.PI * 2); ctx.fill(); }
+    if (!b.alive) { ctx.translate(0, 3); ctx.rotate(f * 0.4); }
+    // heavy tripod
+    ctx.strokeStyle = '#151b21'; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-2, 5); ctx.lineTo(-8, 13); ctx.moveTo(2, 5); ctx.lineTo(8, 13); ctx.stroke();
+    ctx.strokeStyle = '#4a5765'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(-2, 5); ctx.lineTo(-8, 13); ctx.moveTo(2, 5); ctx.lineTo(8, 13); ctx.moveTo(0, 5); ctx.lineTo(0, 13); ctx.stroke();
+    ctx.fillStyle = '#2b333d'; ctx.fillRect(-9.5, 12, 4, 2); ctx.fillRect(5.5, 12, 4, 2);
+    // neck joint
+    ctx.fillStyle = '#20272f'; ctx.fillRect(-3, 2, 6, 5);
+    // angular gunmetal head
+    ctx.beginPath(); ctx.moveTo(-8, -9); ctx.lineTo(-5, -13); ctx.lineTo(5, -13); ctx.lineTo(8, -9); ctx.lineTo(8, 3); ctx.lineTo(-8, 3); ctx.closePath();
+    ctx.fillStyle = '#11161b'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-7, -8.6); ctx.lineTo(-4.4, -12); ctx.lineTo(4.4, -12); ctx.lineTo(7, -8.6); ctx.lineTo(7, 2); ctx.lineTo(-7, 2); ctx.closePath();
+    ctx.fillStyle = '#3a4552'; ctx.fill();
+    ctx.fillStyle = '#56636f'; ctx.fillRect(-4.4, -12, 8.8, 1.2);
+    // hazard band
+    ctx.save(); ctx.beginPath(); ctx.rect(-7, -2, 14, 3.4); ctx.clip();
+    ctx.fillStyle = '#e0a52c'; ctx.fillRect(-7, -2, 14, 3.4); ctx.fillStyle = '#15110a';
+    for (let i = -10; i < 10; i += 4) { ctx.beginPath(); ctx.moveTo(i, 1.4); ctx.lineTo(i + 2, 1.4); ctx.lineTo(i + 4, -2); ctx.lineTo(i + 2, -2); ctx.fill(); }
+    ctx.restore();
+    // twin barrels on the facing side
+    ctx.fillStyle = '#1b2229'; ctx.fillRect(f > 0 ? 6 : -12, -8, 6, 2.2); ctx.fillRect(f > 0 ? 6 : -12, -4.5, 6, 2.2);
+    ctx.fillStyle = k > 0.6 ? '#ff8a5a' : '#2f3943'; ctx.fillRect(f > 0 ? 11 : -12, -8, 1, 2.2); ctx.fillRect(f > 0 ? 11 : -12, -4.5, 1, 2.2);
+    // antenna
+    ctx.strokeStyle = '#2b333d'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-f * 4, -13); ctx.lineTo(-f * 6, -18); ctx.stroke();
+    ctx.fillStyle = b.alive ? (Math.sin(time * 6) > 0 ? '#ff4a3a' : '#5a1a16') : '#2b333d'; ctx.fillRect(-f * 6 - 1, -19.5, 2, 2);
+    // big lens
+    const ex = f * 2.6, ey = -6.2;
+    ctx.fillStyle = '#05080b'; ctx.beginPath(); ctx.arc(ex, ey, 4.4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#6c7a89'; ctx.lineWidth = 1; ctx.stroke();
+    const flick = b.alive ? 1 : (Math.random() < 0.15 ? 0.8 : 0.05);
+    if (b.alive || flick > 0.5) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(ex, ey, 8 + k * 9, `rgba(255,60,40,${(0.55 + 0.45 * k) * flick})`, 1); ctx.restore(); ctx.globalAlpha = 1;
+      ctx.fillStyle = k > 0 ? '#ff9a88' : '#ff3a2a'; ctx.beginPath(); ctx.arc(ex, ey, 2.4 + k * 0.8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(ex - 1.6, ey - 1.8, 1.2, 1.2);
+    } else { ctx.fillStyle = '#2a1416'; ctx.beginPath(); ctx.arc(ex, ey, 2.2, 0, Math.PI * 2); ctx.fill(); }
+    // broken: crackling electric arcs around the head
+    if (!b.alive && Math.random() < 0.55) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (let a = 0; a < 2; a++) {
+        let x = (Math.random() - 0.5) * 12, y = -12 + Math.random() * 14;
+        ctx.strokeStyle = Math.random() < 0.5 ? 'rgba(140,200,255,0.9)' : 'rgba(220,240,255,0.9)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, y);
+        for (let s2 = 0; s2 < 4; s2++) { x += (Math.random() - 0.5) * 9; y += (Math.random() - 0.5) * 9; ctx.lineTo(x, y); }
+        ctx.stroke();
+      }
+      glowDot(0, -5, 14, 'rgba(120,180,255,0.35)', 1);
+      ctx.restore(); ctx.globalAlpha = 1;
+    }
   } else if (b.kind === 'cube') {
     rr(-12.5, -12.5, 25, 25, 4); ctx.fillStyle = '#3a4450'; ctx.fill();      // dark outline
     rr(-12, -12, 24, 24, 4); ctx.fillStyle = '#9aa6b2'; ctx.fill();
@@ -2458,8 +2517,17 @@ function drawTurretBeams() {
   for (const t of bodies) {
     if (t.kind !== 'turret' || !t.alive || !t.segs) continue;
     const k = Math.min(1, t.charge / TURRET_CHARGE), fl = k > 0 ? (0.75 + 0.25 * Math.sin(time * (20 + k * 30))) : 1;
+    const e0 = turretEye(t), main0 = t.segs[0] && t.segs[0][0];
+    // faint view cone between the eye, the top sight line and the main line
+    const topI = t.segs.length - 1, top0 = t.segs[topI] && t.segs[topI][0], from = t.rayFrom && t.rayFrom[topI];
+    if (main0 && top0 && from) {
+      const reach = t.face > 0 ? Math.min(top0.x2, main0.x2) : Math.max(top0.x2, main0.x2);
+      const g = ctx.createLinearGradient(e0.x, 0, reach, 0); g.addColorStop(0, `rgba(255,70,50,${0.10 + 0.18 * k})`); g.addColorStop(1, 'rgba(255,70,50,0)');
+      ctx.globalAlpha = fl; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(e0.x, e0.y); ctx.lineTo(from.x, from.y); ctx.lineTo(reach, from.y); ctx.lineTo(reach, e0.y); ctx.closePath(); ctx.fill();
+    }
     t.segs.forEach((ray, ri) => {
       const main = ri === 0;
+      if (!main && t.rayFrom && t.rayFrom[ri]) { const f = t.rayFrom[ri]; ctx.globalAlpha = (0.08 + 0.3 * k) * fl; ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 0.7; ctx.setLineDash([3, 5]); ctx.beginPath(); ctx.moveTo(e0.x, e0.y); ctx.lineTo(f.x, f.y); ctx.stroke(); ctx.setLineDash([]); }
       for (const sg of ray) {
         ctx.beginPath(); ctx.moveTo(sg.x1, sg.y1); ctx.lineTo(sg.x2, sg.y2);
         if (k > 0 && main) { ctx.globalAlpha = 0.25 * k * fl; ctx.strokeStyle = '#ff3b2f'; ctx.lineWidth = 6 + k * 4; ctx.stroke(); }
