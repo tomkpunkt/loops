@@ -268,6 +268,14 @@ const Snd = (() => {
     tbeep(k) { tone({ f: 700 + k * 900, type: 'square', dur: 0.03, vol: 0.035 }); },
     tfire() { noise({ dur: 0.18, vol: 0.2, freq: 1800, f2: 300 }); tone({ f: 220, f2: 60, type: 'sawtooth', dur: 0.2, vol: 0.09 }); },
     tbuzz() { tone({ f: 90 + Math.random() * 40, f2: 70, type: 'sawtooth', dur: 0.32, vol: 0.035 }); tone({ f: 180 + Math.random() * 60, type: 'square', dur: 0.18, vol: 0.015, delay: 0.05 }); noise({ dur: 0.25, vol: 0.05, freq: 3500, q: 6 }); },
+    zap() { noise({ dur: 0.35, vol: 0.18, freq: 4200, q: 3 }); tone({ f: 120, f2: 80, type: 'sawtooth', dur: 0.4, vol: 0.08 }); for (let i = 0; i < 4; i++) tone({ f: 900 + Math.random() * 1600, type: 'square', dur: 0.03, vol: 0.04, delay: i * 0.05 }); },
+    spike() { noise({ dur: 0.12, vol: 0.14, freq: 2400, q: 2 }); tone({ f: 420, f2: 120, type: 'triangle', dur: 0.18, vol: 0.08 }); },
+    card(all) { tone({ f: 988, type: 'square', dur: 0.06, vol: 0.05 }); tone({ f: 1319, type: 'square', dur: 0.08, vol: 0.05, delay: 0.07 }); if (all) tone({ f: 1760, type: 'triangle', dur: 0.3, vol: 0.06, delay: 0.15 }); },
+    powerSw(on) { noise({ dur: 0.08, vol: 0.12, freq: 900, type: 'lowpass' });
+      if (on) { tone({ f: 50, f2: 220, type: 'sawtooth', dur: 0.9, vol: 0.06, delay: 0.05 }); tone({ f: 660, type: 'sine', dur: 0.2, vol: 0.07, delay: 0.7 }); }
+      else { tone({ f: 220, f2: 40, type: 'sawtooth', dur: 1.0, vol: 0.07, delay: 0.05 }); }
+      if (humGain) humGain.gain.setTargetAtTime(on ? 0.035 : 0.006, ac.currentTime + 0.1, 0.3); },
+    hum(on) { if (humGain) humGain.gain.setTargetAtTime(on ? 0.035 : 0.006, ac.currentTime, 0.2); },
     tdown() { tone({ f: 600, f2: 80, type: 'square', dur: 0.5, vol: 0.06 }); },
     drop() { tone({ f: 380, f2: 160, type: 'triangle', dur: 0.15, vol: 0.06 }); },
     throw() { tone({ f: 600, f2: 120, type: 'sawtooth', dur: 0.2, vol: 0.09 }); noise({ dur: 0.25, vol: 0.12, freq: 900, f2: 200, type: 'lowpass' }); },
@@ -937,6 +945,184 @@ const LEVELS = [
     hint: 'Die Tür trennt zwei Turrets, die sich nicht sehen dürfen. Oder gerade doch. Wirf den Würfel auf den hohen Schalter und warte, bevor du hinuntergehst.',
     quip: 'Zwei Turrets, eine Tür. Wir haben Popcorn bereitgestellt.',
     map: ['################','################','################','################','#..............#','#.............##','#.............##','#..........BBB##','#P.C.......#####','#####..#########','#......#########','#......D.......#','#.T....D.....YE#','################','################','################'] },
+  // >>> NEW LEVELS
+  { name: "Zugangskarte",
+    hint: "Neu: Schlüsselkarten. Solange eine Karte fehlt, bleibt der Ausgang gesperrt. Die Karte liegt unten, und von unten siehst du die obere weiße Wand nicht mehr. Setz ein Portal, bevor du springst.",
+    quip: "Neue Sicherheitsstufe. Ab sofort gilt: kein Ausgang ohne Karte.",
+    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "W..............#", "W..............#", "#P..E..........#", "#######..#######", "#..............#", "W..............#", "W........Q.....#", "################"] },
+  { name: "Trittstein", grav: true, portals: false,
+    hint: "Neu: Stacheln. Sie sind tödlich für dich, für Würfel sind sie nur Boden. Wirf den Würfel mitten in die Grube und spring über ihn hinüber.",
+    quip: "Die Stacheln sind frisch geschliffen. Auf Ihren Wunsch.",
+    map: ["################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#PC...........E#", "###SSSSS########", "################"] },
+  { name: "Nadelkissen", grav: true, portals: false,
+    hint: "Zwei Stachelgruben, ein Würfel. Wirf ihn in die obere Grube, spring hinüber und hol ihn dir von drüben zurück. Unten brauchst du ihn noch einmal.",
+    quip: "Würfel sind wiederverwendbar. Sie leider nicht.",
+    map: ["################", "################", "################", "#..............#", "#..............#", "#..............#", "#P.C...........#", "####SSSSS####..#", "#############..#", "#..............#", "#..............#", "#..............#", "#..............#", "#E.Q...........#", "#####SSSSS######", "################"] },
+  { name: "Einbahnstraße", echo: true, portals: false,
+    hint: "Zwei Karten, zwei Gruben, und aus beiden kommst du nicht mehr heraus. Dein Echo kann Karten einsammeln. Nimm den Weg in die linke Grube auf, dann nimm selbst den rechten.",
+    quip: "Sie können nicht überall gleichzeitig sein. Doch, können Sie.",
+    map: ["################", "################", "################", "#..............#", "#..............#", "#......P.......#", "#..########....#", "#..########....#", "#..########....#", "#..########....#", "#..########....#", "#..########....#", "#..########....#", "#Q.########..QE#", "################", "################"] },
+  { name: "Podest", grav: true, portals: false,
+    hint: "Der Sims ist zu hoch, und davor liegen Stacheln. Ein Turret ist ein brauchbarer Tritt. Komm von hinten, greif ihn und stell ihn auf die Stacheln, mit dem Blick zur Wand.",
+    quip: "Turrets sind keine Möbel. Das hat Ihnen nur noch niemand gesagt.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#............P.#", "#...........####", "#EQ............#", "####...........#", "####...........#", "####SSS...Y....#", "################"] },
+  { name: "Doppelkarte",
+    hint: "Zwei Karten. Eine liegt in der Zelle hinter dem Gitter, die andere auf dem Sims oben links. Eine weiße Decke ist auch ein Eingang.",
+    quip: "Doppelte Sicherheit. Für uns. Für Sie doppelte Arbeit.",
+    map: ["#WW#############", "#..............#", "#..............#", "#..............#", "#.Q............#", "####...........#", "#..............#", "#..............#", "#..............#", "#..............#", "#.........######", "#.........G....#", "#.........G....#", "W.........G....W", "WP..E.....G..Q.W", "################"] },
+  { name: "Sichtachse", grav: true, portals: false,
+    hint: "Unten bewachen zwei Turrets die Karte. Nur der Würfel zwischen ihnen verhindert, dass sie sich sehen. Hol ihn von oben durch das Loch.",
+    quip: "Zwei Turrets, ein Würfel, null Vertrauen.",
+    map: ["################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#P.............#", "######...#######", "#..............#", "#..............#", "#..............#", "#T..Q..C.....YE#", "################", "################"] },
+  { name: "Kartenhaus", echo: true, grav: true, portals: false,
+    hint: "Eine Karte schwebt über den Stacheln, die andere liegt auf dem hohen Sims beim Ausgang. Du hast einen Würfel und ein Echo. Überleg dir die Reihenfolge: Was dein Echo einmal hält, gibt es nicht mehr her.",
+    quip: "Karten, die Sie bei einem Unfall tragen, legen wir zurück. Ordnung muss sein.",
+    map: ["################", "################", "################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#EQ............#", "####...........#", "####......Q....#", "####.P.C.......#", "########SSSSS###", "################"] },
+  { name: "Hochspannung",
+    hint: "Neu: Starkstrom. Blau knisternde Böden töten bei Berührung, Würfel und dein Echo halten das aus. Die Lichtbrücke hängt zu hoch. Leite sie mit zwei Portalen knapp über den Boden.",
+    quip: "Diese Böden stehen unter Spannung. Wir auch, Ihretwegen.",
+    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "W..............{", "W..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..........#####", "W..............#", "WP............E#", "####ZZZZZZZZ####", "################"] },
+  { name: "Isolator", grav: true, portals: false,
+    hint: "Der Schalter liegt auf dem Starkstromboden, direkt vor dir. Liegt der Würfel dort, kommst du nicht hinüber. Du brauchst ihn erst als Trittstein in der Mitte.",
+    quip: "Gummisohlen hätten geholfen. Wir haben keine bestellt.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "################", "#...........D..#", "#...........D..#", "#...........D..#", "#P.CB.......D.E#", "####ZZZZZ#######", "################"] },
+  { name: "Erdung", echo: true, grav: true, portals: false,
+    hint: "Beide Schalter liegen auf Starkstrom. Dein Echo hält Strom aus, nur aufnehmen kannst du es dort nicht. Stell den Würfel auf einen Schalter und nimm auf, wie du auf ihn steigst. Dann zieh ihn deinem Echo unter den Füßen weg.",
+    quip: "Ihr Echo ist geerdet. Im Gegensatz zu Ihnen.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "################", "#...........D..#", "#...........D..#", "#...........D..#", "#PC.B....B..D.E#", "####Z####Z######", "################"] },
+  { name: "Bockspringen", grav: true, portals: false,
+    hint: "Zehn Felder Starkstrom und nur zwei Würfel. Spring von Würfel zu Würfel und hol den hinteren immer wieder nach vorn.",
+    quip: "Würfelhüpfen. Ein Spiel für die ganze Familie. Fast.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#CPC..........E#", "####ZZZZZZZZZZ##", "################"] },
+  { name: "Stromausfall",
+    hint: "Neu: Stromausfall. Ohne Strom ist es dunkel und der Ausgang tot. Der Hebel bringt den Strom zurück, du schaltest ihn, indem du hineinläufst. Merk dir den Raum, solange das Notlicht flackert.",
+    quip: "Stromausfall. Bitte bewahren Sie Ruhe. Wir sehen Sie übrigens trotzdem.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#..............#", "#E.P.......X...#", "#####SSS########", "################"] },
+  { name: "Dämmerung",
+    hint: "Ohne Strom schläft der Turret. Der Hebel steht direkt vor ihm. Schaltest du ein, wacht er auf. Sieh zu, dass du dann nicht mehr vor ihm stehst.",
+    quip: "Der Turret hat Bereitschaft. Er schläft trotzdem. Wie alle hier.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#P..........X.Y#", "#############.##", "#..............#", "#E.............#", "################", "################"] },
+  { name: "Fernschalter", grav: true, portals: false,
+    hint: "Die Lichtbrücke braucht Strom, der Hebel steht drüben hinter der Säure. Ein Würfel, der in den Hebel fliegt, schaltet ihn genauso. Ziel auf das rote Licht.",
+    quip: "Fernbedienung nach Art des Hauses: werfen.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "}..............#", "#P.C.........XE#", "####~~~~~~~~####", "################"] },
+  { name: "Schichtbeginn", echo: true, portals: false,
+    hint: "Mit Strom erwischt dich der Turret, bevor du an ihm vorbei bist. Ohne Strom ist der Ausgang tot. Nimm auf, wie du wartest und dann den Hebel umlegst, und beende die Aufnahme sofort. Lauf im Dunkeln los.",
+    quip: "Ihre Schicht beginnt, sobald Ihr Echo es sagt.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#..............#", "#XP......Y...E.#", "################", "################"] },
+  { name: "Kaltstart", grav: true, portals: false,
+    hint: "Ohne Strom ist der Boden tot und harmlos. Mit Strom kommst du nicht mehr hinüber, ohne Strom nicht hinaus. Nimm den Würfel mit und schalte den Hebel von drüben ein.",
+    quip: "Kaltstart erfolgreich. Bitte nicht wiederholen. Doch, bitte.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#..............#", "#X.PC.........E#", "#####ZZZZZZZ####", "################"] },
+  { name: "Kurzschluss", powered: true,
+    hint: "Ein Turret bewacht die Lichtbrücke. Ohne Strom gibt es keine Brücke, und was darauf steht, fällt. Mit Strom ist der Boden darunter tödlich. Auch für Turrets.",
+    quip: "Kurzschluss im Sektor sieben. Nein, das waren Sie.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "}........Y....E#", "##............##", "###...........##", "####..........##", "#####XP.......##", "########ZZZZ####", "################"] },
+  { name: "Blindflug",
+    hint: "Der Laser öffnet die Tür, sobald er den Empfänger trifft. Mit Strom bewacht der Turret alles außerhalb der Nische. Setz die Portale im Dunkeln, solange er schläft, und schalte erst danach ein.",
+    quip: "Bitte zielen Sie im Dunkeln. Wir glauben an Sie. Ein bisschen.",
+    map: ["############WW##", "#.........#....#", "#.........#....#", "#.........#....#", "#.........#....#", "#..............#", ">..............W", "#..............W", "#..............#", "#..............#", "#..............#", "####...........#", "#.D............#", "#.DX..........Y#", "#ED.P#######RR##", "################"] },
+  { name: "Kartenleger", powered: true,
+    hint: "Die Karte liegt mitten im Laserstrahl. Der Laser braucht Strom, der Ausgang auch. Der Hebel hängt über dir, spring hinein.",
+    quip: "Wir haben die Karte gut versteckt. Im Laser. Sehr gut versteckt.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#.X............#", "#E.P.#.SS..Q...<", "################", "################"] },
+  { name: "Schildbrücke", grav: true, portals: false,
+    hint: "Der Hebel liegt auf deinem Weg, die Brücke kommt mit dem Strom. Der Turret am anderen Ende auch. Nimm den Würfel als Schild vor dich.",
+    quip: "Die Brücke ist sicher. Der Turret nicht. Für Sie.",
+    map: ["################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#..............#", "}CP.X.......E.Y#", "#####......#####", "#..............#", "#..............#", "#..............#", "#~~~~~~~~~~~~~~#", "################"] },
+  { name: "Dunkelkammer",
+    hint: "Im Dunkeln siehst du nur, was um dich herum ist. Merk dir die Gruben, solange das Notlicht flackert. Karte und Hebel liegen auf der anderen Seite.",
+    quip: "Die Dunkelkammer. Hier entwickeln wir Testpersonen.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#...........Q..#", "#EP.SS..SS..#SX#", "################", "################"] },
+  { name: "Fernwartung", echo: true, portals: false,
+    hint: "Der Schalter drüben öffnet die Tür zum Ausgang, aber der Ausgang braucht Strom. Mit Strom kommst du nicht über den Boden, dein Echo schon. Nimm den Weg im Dunkeln auf und schalte danach ein.",
+    quip: "Wartung aus der Ferne. Ihr Echo erledigt das, Sie schalten das Licht an.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "###............#", "#.D............#", "#.DX...........#", "#ED..P......B..#", "#######ZZZZZ####", "################"] },
+  { name: "Hebelwirkung", grav: true,
+    hint: "Der Hebel sitzt in einer Zelle hinter Gittern. Ein Würfel kommt durch ein Portal hinein: Lass ihn in die kleine Grube fallen. Spring selbst lieber nicht hinterher. Die Lichtbrücke über der Säure kommt mit dem Strom.",
+    quip: "Hebelwirkung, physikalisch korrekt. Fast.",
+    map: ["################", "#..........#WW##", "#..........G...#", "#..........G...#", "#..........GXX.#", "#..........#####", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "}..............#", "#P..C.........E#", "##..##~~~~~~~###", "##WW############"] },
+  { name: "Türstopper", grav: true, portals: false,
+    hint: "Mit Strom öffnet der Laser die Tür, aber dahinter wacht der Turret. Ohne Strom schläft er, und die Tür schließt sich. Es sei denn, etwas steht in der Tür.",
+    quip: "Bitte halten Sie die Türen frei. Oder eben nicht.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", ">.....R........#", "#.....D........#", "#.....D......X.#", "#.X...D.....Y.E#", "#P.C..##########", "################"] },
+  { name: "Taktgeber", echo: true, portals: false, powered: true,
+    hint: "Über die Säure kommst du nur mit Strom, durch das Loch und am Turret vorbei nur ohne, hinaus wieder nur mit. Nimm auf, wie du den Hebel aus- und nach einer Weile wieder einschaltest.",
+    quip: "Licht an, Licht aus, Licht an. Wir nennen das Präzisionsarbeit.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "}XP............#", "####~~~~~~####.#", "#..............#", "#E..........T..#", "################", "################"] },
+  { name: "Hochseil",
+    hint: "Die Karte hängt hoch über dem Boden. Leite die Lichtbrücke durch ein Portal hinauf und nimm denselben Weg wie sie.",
+    quip: "Balancieren auf Licht. Ein Netz haben wir nicht gespannt.",
+    map: ["################", "################", "################", "################", "################", "#..............#", "#..............#", "W..............#", "W......Q......E#", "#...........####", "#..............#", "#..............#", "#..............W", "}P.............W", "################", "################"] },
+  { name: "Lichtschatten", echo: true, portals: false,
+    hint: "Im Gang unten liegt ein Laser, und ohne Strom gibt es keinen Ausgang. Nimm im Dunkeln auf, wie du dich direkt vor den Laser stellst. Dein Echo hält ihn aus und wirft einen Schatten über den Gang.",
+    quip: "Ihr Echo steht im Licht. Sie im Schatten. Sehr symbolisch.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#X.............#", "#.P............#", "#####.##########", "#..............#", ">..........Q..E#", "################", "################"] },
+  { name: "Schattenmann", echo: true, portals: false,
+    hint: "Der Turret steht direkt hinter dem Ausgang. Er schießt auf das Erste, was er sieht. Nimm im Dunkeln auf, wie du bis vor den Turret gehst, schalte dann ein und folge deinem Echo dicht.",
+    quip: "Ihr Echo geht voran. Sie folgen. Endlich einmal Teamarbeit.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#.X............#", "#P.........E..Y#", "################", "################"] },
+  { name: "Gegenlicht",
+    hint: "Der Turret bewacht den ganzen Boden. Laser brennen Turrets die Optik durch. Lenk den Strahl mit zwei Portalen von oben auf seinen Kopf.",
+    quip: "Bitte nicht in den Laser schauen. Das gilt auch für Turrets. Besonders für Turrets.",
+    map: ["#WWW############", "#..............#", "#..............#", "W..............<", "W..............#", "#..............#", "#..............#", "#...........P..#", "#GGG##########.#", "#..............#", "#..............#", "#..............#", "#..............#", "#.TE...........#", "################", "################"] },
+  { name: "Stromstoß",
+    hint: "Der Turret steht auf einer weißen Platte im niedrigen Gang, an ihm kommst du nicht vorbei. Ein Portal unter seinen Füßen, das andere über der Starkstromgrube. Danach parkst du das Bodenportal besser woanders.",
+    quip: "Turrets sind nicht wasserdicht. Und auch sonst nicht viel.",
+    map: ["################", "################", "################", "#..............#", "#P.............#", "###............#", "W..............#", "W..............#", "#......GGGGG#..#", "#..........YE..W", "##########WW#..W", "#...........#..#", "#~~~~~~~~~~~#..#", "#############..#", "#############ZZ#", "################"] },
+  { name: "Umlenkung",
+    hint: "Ein Laser, zwei Aufgaben: Er kann den Turret ausschalten oder den Empfänger treffen, der die Tür öffnet. Nur nicht beides auf einmal. Die Reihenfolge entscheidet.",
+    quip: "Multitasking ist in dieser Anlage ausdrücklich unerwünscht. Bei Lasern.",
+    map: ["#WWW############", "#..............#", "#..............#", "W..............<", "W..............#", "#..............#", "#..............#", "#...........P..#", "#GGG##########.#", "#....#.........#", "#....#.........#", "#....#.........#", "#....D.........#", "#.T.ED.........#", "#R##############", "################"] },
+  { name: "Lichtwechsel", powered: true,
+    hint: "Eine Karte liegt im Laser, die andere hinter der Säure. Den Laser gibt es nur mit Strom, die Brücke auch. Plane deine Schaltvorgänge.",
+    quip: "Strom an, Strom aus. Sie haben jetzt Befugnis über die Lichtschalter. Bitte nicht missbrauchen.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#......X.......#", "#..............#", ">.Q..#P.E.....Q{", "##########~~~~##", "################"] },
+  { name: "Schranke", grav: true, portals: false,
+    hint: "Der Würfel hält den Laser auf. Heb ihn durch das Gitter an, dann trifft der Strahl den Turret. Danach steht der Ausgang allerdings im Laser. Es sei denn, der Würfel kommt zurück.",
+    quip: "Ein- und ausgeschaltet. Mit einem Würfel. Unsere Ingenieure sind beschämt.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#P.............#", "###G##########.#", "#..............#", "#..............#", ">..CE.......Y..#", "################", "################"] },
+  { name: "Wechselschaltung", grav: true, portals: false, powered: true,
+    hint: "Zwei Hebelvorhänge liegen direkt im Weg, du schaltest sie beim Durchlaufen. Über den Boden kommst du nur ohne Strom, durch den Laser auch, hinaus nur mit. Zähl mit, wie oft geschaltet wird, und hilf mit dem Würfel nach.",
+    quip: "Hebel, Hebel, Laser, Ausgang. Klingt wie ein Kinderreim. Ist keiner.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "################", "############v###", "#..X......X...X#", "#..X......X....#", "#PCX......X...E#", "####ZZZZ########", "################"] },
+  { name: "Wartungsschacht", echo: true, grav: true, portals: false,
+    hint: "Der Schalter liegt auf Starkstrom, und hinter der Tür wartet ein Turret direkt neben dem Ausgang. Einer von euch hält den Schalter, einer hält den Würfel. Wer was macht, entscheidest du.",
+    quip: "Wartungsarbeiten. Bitte halten Sie Abstand. Zu allem.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "################", "#......D.......#", "#......D.......#", "#..X...D.......#", "#CP..B.D....E.Y#", "#####Z##########", "################"] },
+  { name: "Bilanz", echo: true, portals: false, powered: true,
+    hint: "Drei Karten: eine im Laser, eine tief in der Grube, eine hinter der Säure. Laser und Brücke gibt es nur mit Strom, und aus der Grube kommt niemand zurück. Außer als Echo.",
+    quip: "Drei Karten, ein Ausgang. Wir führen genau Buch.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "#.......X......#", "#..............#", ">..Q#PE.......Q{", "#.#######~~~~~##", "#.##############", "#.##############", "#Q##############", "################"] },
+  { name: "Vorhut", echo: true, portals: false,
+    hint: "Mit Strom liegt eine Brücke über dem Boden, und am Ende wacht der Turret. Ohne Strom ist der Boden harmlos. Schick dein Echo im Dunkeln voraus und folge ihm im Licht.",
+    quip: "Ihr Echo geht durch den Strom, Sie gehen darüber. Arbeitsteilung, wie sie im Buche steht.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#..............#", "#.X............#", "}P..........E.Y#", "###ZZZZZZZZZZZ##", "################"] },
+  { name: "Lastwechsel", echo: true, portals: false, powered: true,
+    hint: "Der Turret steht auf der Brücke über dem Starkstrom, die Tür öffnet nur der Schalter auf dem Starkstrom. Ohne Strom fällt, was auf der Brücke steht. Plane, wann du schaltest und wann du aufnimmst.",
+    quip: "Lastwechsel im Netz. Bitte rechnen Sie mit Ausfällen. Vor allem bei Turrets.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#......D.......#", "#......D.......#", "#......D..Y....#", "#.X....D......E{", "#P...B.D......##", "#####Z##ZZZZZZ##", "################"] },
+  { name: "Blickkontakt",
+    hint: "Zwei Turrets auf zwei Etagen, zwei weiße Wände. Mit Portalen sehen sie sich, aber wer dazwischen steht, wird zuerst getroffen. Setz die Portale im Dunkeln. Der Hebel liegt in der Grube.",
+    quip: "Wir haben die beiden einander vorgestellt. Sie waren nicht begeistert.",
+    map: ["################", "################", "################", "################", "#..............#", "#..............W", "#T.....P.......W", "########.#######", "########.#######", "########.#######", "########.#######", "#..............#", "W..............#", "W.E...........Y#", "#########X######", "################"] },
+  { name: "Hochspannungsmast", echo: true, grav: true, portals: false,
+    hint: "Der Ausgang liegt oben auf dem Sims und braucht Strom. Vor der Wand liegt Starkstrom, dort kann nur dein Echo stehen. Nimm im Dunkeln die Hebebühne auf und klettere im Licht.",
+    quip: "Ihr Echo steht unter Strom und hält Ihnen den Würfel. Mehr Loyalität gibt es nicht.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#............E.#", "#...........####", "#X..........####", "#.PC........####", "##########ZZ####", "################"] },
+  { name: "Abflug",
+    hint: "Die Karte schwebt hoch über den Stacheln. Wer tief fällt, fliegt hoch: ein Portal unten in der Grube, eins zwischen den Stacheln. Lenk nach dem Abflug zum Ausgang.",
+    quip: "Bitte anschnallen. Ach, es gibt keine Gurte. Dann eben nicht.",
+    map: ["################", "#..............#", "#..............#", "#P.............#", "####...........#", "####........Q..#", "####...........#", "####.........E.#", "####.........###", "####...........#", "####...........#", "####...........#", "####...........#", "####...........#", "####....SSSWWSS#", "#####WW#########"] },
+  { name: "Taktgefühl", echo: true, portals: false, powered: true,
+    hint: "Brücke, Starkstrom, Brücke. Die Brücken brauchen Strom, über den Boden kommst du nur ohne, die Karte liegt mittendrin. Nimm auf, wie du aus- und wieder einschaltest, und warte auf den Säulen auf deinen Einsatz.",
+    quip: "Sie haben Taktgefühl. Das steht so in Ihrer Akte. Mit Fragezeichen.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "################", "#..............#", "#..............#", "#X.............#", "#..............#", "}.P...#.Q..#..E{", "###~~~#ZZZZ#~~##", "################"] },
+  { name: "Abschaltung", grav: true, portals: false, powered: true, darkExit: true,
+    hint: "Letzte Kammer. Der Notausgang öffnet sich nur, wenn die ganze Anlage ohne Strom ist. Vorher brauchst du noch beide Karten. Halte den Würfel als Schild über die Brücke.",
+    quip: "Sie werden doch nicht den Hauptschalter anfassen. Das ist eine rhetorische Frage. Hoffentlich.",
+    map: ["################", "################", "################", "################", "################", "################", "################", "################", "############v###", "#..............#", "#..............#", "#..............#", "#..............#", "}CP.......QXQEY#", "####~~~~~#######", "################"] },
+  // <<< NEW LEVELS
 ];
 const QUIPS = ['Willkommen zurück. Das Gefühl, an zwei Orten gleichzeitig zu sein, ist normal.',
   'Schwung ist kostenlos. Säure leider auch.',
@@ -962,6 +1148,14 @@ const TXT = {
       'Alles auf Anfang. Die Würfel sind wieder sauber.', 'Zweiter Versuch. Oder dritter. Wir zählen nicht mit. Doch.', 'Frischer Start. Die Portale sind neu poliert.', 'Sie wollten es also nochmal sehen.'],
     IDLE: ['Hallo? Sind Sie noch da?', 'Die Kammer löst sich nicht von selbst. Wir haben es probiert.', 'Nachdenken ist erlaubt. In Maßen.', 'Wir messen übrigens auch die Wartezeit.',
       'Kleiner Tipp: Portale wirken besser, wenn man sie benutzt.', 'Unsere Geduld ist unendlich. Unser Strom nicht.', 'Falls Sie schlafen: bitte nicht auf dem Schalter.', 'Die Würfel werden ungeduldig. Sagen sie zumindest.'],
+    DEATH_ZAP: ['Elektrisierend. Leider wörtlich.', 'Das war Starkstrom. Wir hatten es angeschrieben.', 'Ihre Haare stehen jetzt dauerhaft. Bitte weitermachen.', 'Stromschlag registriert. Die Rechnung geht an Sie.',
+      'Gratulation, Sie leiten. Nicht das Projekt, den Strom.', 'Ihr Echo hätte das überlebt. Nur so als Anmerkung.'],
+    DEATH_SPIKE: ['Spitze. Im wörtlichen Sinn.', 'Die Stacheln sind dekorativ. Und tödlich.', 'Bitte nicht auf die Stacheln. Wir hatten das doch besprochen.', 'Das war ein Punkt für die Stacheln.',
+      'Aufgespießt. Die Reinigung ist informiert.', 'Stacheln gewinnen gegen Sie. Würfel gewinnen gegen Stacheln. Denken Sie darüber nach.'],
+    CARD: ['Zugang gewährt. Widerwillig.', 'Schlüsselkarte erkannt. Der Ausgang ist entsperrt.', 'Karte gelesen. Bitte nicht verbiegen.', 'Berechtigung erteilt. Bis auf Widerruf.'],
+    POWER_ON: ['Strom ist wieder da. Leider auch für die Turrets.', 'Energieversorgung hergestellt. Alles läuft wieder. Alles.', 'Licht an. Sie sehen müde aus.', 'Netz stabil. Die Anlage dankt.'],
+    POWER_OFF: ['Stromausfall. Bitte bewahren Sie die Ruhe. Und den Überblick.', 'Energiesparmodus aktiv. Auf Ihre Kosten.', 'Licht aus. Turrets aus. Ausgang auch aus.', 'Kein Strom. Die Anlage schläft. Fast alles.'],
+    needCard: 'Ausgang gesperrt. Schlüsselkarte fehlt.', needPower: 'Ausgang ohne Strom. Bitte Energieversorgung herstellen.', needDark: 'Notausgang gesperrt. Er öffnet sich nur bei vollständigem Stromausfall.', finalOff: 'Nein. Nicht der Hauptschalter. Bitte lassen Sie das Licht an. Bitte.',
     crash: 'Kammer bestanden. Kammer bes— Kammer bestanden. Kammer be— KAMMER BESTANDEN. Systemfehler. Bitte warten…',
     gun: 'Neue Ausrüstung. Die Gravitationskanone hebt Würfel, trägt sie und wirft sie. Bitte nur Würfel.',
     lastWin: 'Alle Tests bestanden. Eine Belohnung ist in Planung.',
@@ -1001,6 +1195,14 @@ const TXT = {
       'Back to square one. The cubes have been cleaned.', "Second attempt. Or third. We're not counting. We are.", 'Fresh start. The portals have been polished.', 'So you wanted to see that again.'],
     IDLE: ['Hello? Are you still there?', "The chamber won't solve itself. We tried.", 'Thinking is permitted. In moderation.', 'We are also measuring your waiting time, by the way.',
       'Small hint: portals work better when you use them.', 'Our patience is infinite. Our power supply is not.', "If you're asleep: please not on the switch.", 'The cubes are getting impatient. Or so they say.'],
+    DEATH_ZAP: ['Electrifying. Unfortunately, literally.', 'That was high voltage. There was a sign.', 'Your hair now stands up permanently. Please carry on.', 'Electric shock registered. The bill goes to you.',
+      'Congratulations, you are a conductor. Not of an orchestra.', 'Your echo would have survived that. Just saying.'],
+    DEATH_SPIKE: ['Spiked. Literally.', 'The spikes are decorative. And lethal.', 'Please stay off the spikes. We discussed this.', 'One point for the spikes.',
+      'Impaled. Cleaning has been notified.', 'Spikes beat you. Cubes beat spikes. Think about it.'],
+    CARD: ['Access granted. Reluctantly.', 'Key card recognised. The exit is unlocked.', 'Card read. Please do not bend it.', 'Authorisation granted. Until revoked.'],
+    POWER_ON: ['Power restored. For the turrets too, sadly.', 'Power supply online. Everything works again. Everything.', 'Lights on. You look tired.', 'Grid stable. The facility thanks you.'],
+    POWER_OFF: ['Power failure. Please remain calm. And oriented.', 'Energy saving mode active. At your expense.', 'Lights off. Turrets off. Exit off, too.', 'No power. The facility sleeps. Almost everything.'],
+    needCard: 'Exit locked. Key card missing.', needPower: 'Exit has no power. Please restore the power supply.', needDark: 'Emergency exit locked. It only opens during a total power failure.', finalOff: 'No. Not the main switch. Please leave the lights on. Please.',
     crash: 'Chamber complete. Chamber comp— Chamber complete. Chamber co— CHAMBER COMPLETE. System error. Please wait…',
     gun: 'New equipment. The gravity gun lifts cubes, carries them and throws them. Cubes only, please.',
     lastWin: 'All tests passed. A reward is being planned.',
@@ -1085,7 +1287,53 @@ const TXT = {
       ['Ricochet', 'Two turrets, two floors, two white walls. Link the walls so each turret sees the other. Then the lower corridor is clear.', 'Please introduce the two of them. It will be brief.'],
       ['Disposal', 'From above it cannot see you. Grab it through the hole in the floor and throw it away. A thrown turret shuts down.', 'Turrets are facility property. Please handle them with care. Or not.'],
       ['Decoy', 'On the ledge the turret\'s beam catches you. If your echo stands on the pedestal, it blocks the beam. Record yourself jumping onto the pedestal and stop the recording quickly.', 'Your echo is modelling. The turret is delighted.'],
-      ['Crossfire', 'The door separates two turrets that must not see each other. Or maybe they should. Throw the cube onto the high switch and wait before you go down.', 'Two turrets, one door. We have provided popcorn.']
+      ['Crossfire', 'The door separates two turrets that must not see each other. Or maybe they should. Throw the cube onto the high switch and wait before you go down.', 'Two turrets, one door. We have provided popcorn.'],
+      // >>> NEW EN
+      ["Key Card", "New: key cards. While a card is missing, the exit stays locked. The card is down below, and from down there you can no longer see the upper white wall. Place a portal before you jump.", "New security level. From now on: no exit without a card."],
+      ["Stepping Stone", "New: spikes. They are deadly for you, but for cubes they are just floor. Throw the cube into the middle of the pit and hop across it.", "The spikes have been freshly sharpened. At your request."],
+      ["Pincushion", "Two spike pits, one cube. Throw it into the upper pit, hop across and pull it back from the other side. You will need it again down below.", "Cubes are reusable. You, unfortunately, are not."],
+      ["One Way", "Two cards, two pits, and you cannot get out of either. Your echo can pick up cards. Record the way into the left pit, then take the right one yourself.", "You cannot be in two places at once. Actually, you can."],
+      ["Pedestal", "The ledge is too high, with spikes in front of it. A turret makes a decent step. Come from behind, grab it and set it on the spikes, facing the wall.", "Turrets are not furniture. Nobody has told you yet, that is all."],
+      ["Double Card", "Two cards. One is in the cell behind the grille, the other on the ledge at the top left. A white ceiling is an entrance too.", "Double security. For us. Double work for you."],
+      ["Line of Fire", "Two turrets guard the card below. Only the cube between them keeps them from seeing each other. Pull it out from above, through the hole.", "Two turrets, one cube, zero trust."],
+      ["House of Cards", "One card floats above the spikes, the other lies on the high ledge by the exit. You have one cube and one echo. Think about the order: whatever your echo holds, it never lets go.", "Cards you carry during an accident are put back. Order must be maintained."],
+      ["High Voltage", "New: live floors. Crackling blue floors kill on contact; cubes and your echo can take it. The light bridge hangs too high. Use two portals to lead it just above the floor.", "These floors are live. So are our nerves, thanks to you."],
+      ["Insulator", "The switch lies on the live floor, right in front of you. If the cube sits there, you cannot get across. You need it as a stepping stone in the middle first.", "Rubber soles would have helped. We did not order any."],
+      ["Grounded", "Both switches lie on live floor. Your echo can take the current, you just cannot record it standing there. Put the cube on a switch and record yourself climbing onto it. Then pull it out from under your echo.", "Your echo is grounded. Unlike you."],
+      ["Leapfrog", "Ten tiles of live floor and only two cubes. Hop from cube to cube and keep bringing the back one to the front.", "Cube hopping. A game for the whole family. Almost."],
+      ["Power Failure", "New: power failure. Without power it is dark and the exit is dead. The lever brings the power back; you flip it by walking into it. Memorise the room while the emergency light flickers.", "Power failure. Please remain calm. We can still see you, by the way."],
+      ["Twilight", "Without power the turret sleeps. The lever sits right in front of it. Switch it on and it wakes up. Make sure you are no longer standing in front of it then.", "The turret is on call. It is asleep anyway. Like everyone here."],
+      ["Remote Switch", "The light bridge needs power, and the lever is over there beyond the acid. A cube flying into the lever flips it just as well. Aim for the red light.", "Remote control, house style: throwing."],
+      ["Shift Start", "With power on, the turret gets you before you are past it. Without power, the exit is dead. Record yourself waiting and then flipping the lever, and stop the recording right away. Set off in the dark.", "Your shift starts when your echo says so."],
+      ["Cold Start", "Without power the floor is dead and harmless. With power you can no longer get across, without power you cannot get out. Take the cube along and switch the lever on from over there.", "Cold start successful. Please do not repeat. Actually, please do."],
+      ["Short Circuit", "A turret guards the light bridge. Without power there is no bridge, and whatever stands on it falls. With power the floor below is deadly. For turrets too.", "Short circuit in sector seven. No, that was you."],
+      ["Flying Blind", "The laser opens the door once it hits the receiver. With power on, the turret watches everything outside the alcove. Place the portals in the dark while it sleeps, and only then switch on.", "Please aim in the dark. We believe in you. A little."],
+      ["Card Sharp", "The card lies right in the laser beam. The laser needs power, and so does the exit. The lever hangs above you, jump into it.", "We hid the card well. In the laser. Very well."],
+      ["Shield Bridge", "The lever lies on your way, and the bridge comes with the power. So does the turret at the far end. Hold the cube in front of you as a shield.", "The bridge is safe. The turret is not. For you."],
+      ["Darkroom", "In the dark you only see what is around you. Memorise the pits while the emergency light flickers. Card and lever lie on the far side.", "The darkroom. This is where we develop test subjects."],
+      ["Remote Maintenance", "The switch over there opens the door to the exit, but the exit needs power. With power on you cannot cross the floor, your echo can. Record the walk in the dark, then switch on.", "Remote maintenance. Your echo does the work, you turn on the lights."],
+      ["Leverage", "The lever sits in a cell behind bars. A cube gets in through a portal: drop it into the small pit. Better not jump in after it yourself. The light bridge over the acid comes with the power.", "Leverage, physically correct. Almost."],
+      ["Doorstop", "With power on, the laser opens the door, but the turret is awake behind it. Without power it sleeps, and the door closes. Unless something is standing in the doorway.", "Please keep the doors clear. Or not."],
+      ["Metronome", "You can only cross the acid with power, only drop through the hole and past the turret without it, and only get out with it again. Record yourself switching the lever off and, after a while, on again.", "Lights on, lights off, lights on. We call that precision work."],
+      ["High Wire", "The card hangs high above the floor. Lead the light bridge up through a portal and take the same way it does.", "Balancing on light. We did not put up a net."],
+      ["Light and Shadow", "There is a laser in the corridor below, and without power there is no exit. In the dark, record yourself standing right in front of the laser. Your echo can take it and casts a shadow over the corridor.", "Your echo stands in the light. You in the shadow. Very symbolic."],
+      ["Shadow Man", "The turret stands right behind the exit. It shoots at the first thing it sees. In the dark, record yourself walking up to the turret, then switch on and follow your echo closely.", "Your echo leads, you follow. Teamwork at last."],
+      ["Backlight", "The turret guards the whole floor. Lasers burn out the optics of a turret. Use two portals to send the beam down onto its head.", "Please do not look into the laser. That goes for turrets too. Especially for turrets."],
+      ["Power Surge", "The turret stands on a white plate in the low corridor, and there is no getting past it. One portal under its feet, the other above the live pit. Afterwards, better park the floor portal somewhere else.", "Turrets are not waterproof. Or much else, for that matter."],
+      ["Redirect", "One laser, two jobs: it can knock out the turret or hit the receiver that opens the door. Just not both at once. The order decides.", "Multitasking is expressly discouraged in this facility. For lasers."],
+      ["Changeover", "One card lies in the laser, the other beyond the acid. The laser only exists with power, and so does the bridge. Plan your switching.", "Power on, power off. You now have authority over the light switches. Please do not abuse it."],
+      ["Barrier", "The cube holds back the laser. Lift it through the grille and the beam hits the turret. After that, though, the exit stands in the laser. Unless the cube comes back.", "Switched off and on. With a cube. Our engineers are embarrassed."],
+      ["Two-Way Switch", "Two lever curtains lie right in your way, and you flip them just by walking through. You can only cross the floor without power, pass the laser without it too, and only get out with it. Count the flips and help out with the cube.", "Lever, lever, laser, exit. Sounds like a nursery rhyme. It is not."],
+      ["Maintenance Shaft", "The switch lies on live floor, and behind the door a turret waits right next to the exit. One of you holds the switch, one holds the cube. You decide who does what.", "Maintenance in progress. Please keep your distance. From everything."],
+      ["Balance Sheet", "Three cards: one in the laser, one deep in the pit, one beyond the acid. Laser and bridge only exist with power, and nobody comes back out of the pit. Except as an echo.", "Three cards, one exit. We keep exact books."],
+      ["Vanguard", "With power on, a bridge lies above the floor, and at the end the turret keeps watch. Without power, the floor is harmless. Send your echo ahead in the dark and follow it in the light.", "Your echo walks through the current, you walk above it. Division of labour by the book."],
+      ["Load Change", "The turret stands on the bridge above the live floor, and only the switch on the live floor opens the door. Without power, whatever stands on the bridge falls. Plan when you switch and when you record.", "Load change on the grid. Please expect outages. Especially among turrets."],
+      ["Eye Contact", "Two turrets on two floors, two white walls. With portals they see each other, but whoever stands in between gets hit first. Place the portals in the dark. The lever lies in the pit.", "We introduced the two of them. They were not thrilled."],
+      ["Pylon", "The exit sits up on the ledge and needs power. In front of the wall lies live floor, and only your echo can stand there. Record the lift in the dark and climb in the light.", "Your echo stands in the current and holds the cube for you. Loyalty does not get any better."],
+      ["Take-off", "The card floats high above the spikes. What falls deep flies high: one portal at the bottom of the pit, one between the spikes. Steer to the exit after take-off.", "Please fasten your seatbelt. Oh, there are no belts. Never mind."],
+      ["Sense of Timing", "Bridge, live floor, bridge. The bridges need power, the floor can only be crossed without it, and the card lies in the middle. Record yourself switching off and on again, and wait on the pillars for your cue.", "You have a sense of timing. It says so in your file. With a question mark."],
+      ["Shutdown", "Last chamber. The emergency exit only opens when the whole facility is without power. Before that, you need both cards. Hold the cube as a shield across the bridge.", "Surely you will not touch the main switch. That is a rhetorical question. Hopefully."],
+      // <<< NEW EN
     ]
   }
 };
@@ -1108,6 +1356,8 @@ let echo = null, recording = null, crashT = 0, gotGun = 0;
 let flashes = [], subtitle = null, flicker = 0, nextFlicker = 20;
 let lasers = [], receivers = [], emitters = [], projectors = [], bridges = [];
 let particles = [], beams = [], motes = [], trail = [], acidCells = [], exitCells = [];
+// power: levels with a power lever (X) start in the dark unless marked powered. No power = no light, no exit, no turrets, lasers, bridges or live floors.
+let leverCd = 0, power = true, hasPower = false, switches = [], cards = [], cardsLeft = 0, darkA = 0, revealT = 0, powerFx = 0, lockT = 0, zapCells = [];
 let aim = { x: W / 2, y: H / 2, active: false, mouse: false, mode: 'none', dx: 1, dy: 0 };
 let gunColor = 'blue', lastColor = 'blue';
 const input = { left: false, right: false, jump: false, axis: 0, padAxis: 0 };
@@ -1138,8 +1388,12 @@ function loadLevel(i, quiet) {
   bodies = []; portals = { blue: null, orange: null }; lastBtnState = null;
   particles = []; beams = []; trail = [];
   acidCells = []; exitCells = []; receivers = []; emitters = []; lasers = []; projectors = []; bridges = [];
+  switches = []; cards = []; zapCells = [];
   for (let y = 0; y < grid.length; y++) for (let x = 0; x < grid[y].length; x++) {
     if (grid[y][x] === '~') acidCells.push([x, y]);
+    if (grid[y][x] === 'Z') zapCells.push([x, y]);
+    if (grid[y][x] === 'X') switches.push({ x, y, occ: true });
+    if (grid[y][x] === 'Q') { cards.push({ x: x * T + T / 2, y: y * T + T / 2, got: false, t: 0 }); grid[y][x] = '.'; }
     if (grid[y][x] === 'E' || grid[y][x] === 'K') exitCells.push([x, y]);
     if (grid[y][x] === 'R' || grid[y][x] === 'r') {
       const ch = grid[y][x] === 'R' ? 1 : 2;
@@ -1153,6 +1407,8 @@ function loadLevel(i, quiet) {
   for (let i = 0; i < 34; i++) motes.push({ x: Math.random() * grid[0].length * T, y: Math.random() * grid.length * T,
     vx: (Math.random() - 0.5) * 8, vy: -2 - Math.random() * 6, ph: Math.random() * 6.28, s: 0.6 + Math.random() * 1.2 });
   doorOpen = false; doorT = 0; doorOpen2 = false; doorT2 = 0; pressed = false;
+  cardsLeft = cards.length; hasPower = switches.length > 0; power = !hasPower || !!LEVELS[i].powered;
+  darkA = 0; revealT = power ? 0 : 1.9; powerFx = 0; lockT = 0; leverCd = 0; Snd.hum(power);
   state = 'play'; winTimer = 0; introT = 2.4;
   if (typeof camReset === 'function') { cine = null; camReset(); visor = 1; saveStats(); Snd.stopSong(); }
   gunTaken = false;
@@ -1174,8 +1430,8 @@ function loadLevel(i, quiet) {
 const charAt = (cx, cy) => (cx < 0 || cy < 0 || cx >= COLS || cy >= ROWS) ? '#' : grid[cy][cx];
 const EMIT = { '>': [1, 0], '<': [-1, 0], 'v': [0, 1], '^': [0, -1] };
 const BRIDGE = { '}': 1, '{': -1 };
-const isSolidChar = c => c === '#' || c === 'W' || c === 'G' || c === 'R' || c === 'r' || !!EMIT[c] || !!BRIDGE[c] || (c === 'D' && !doorOpen) || (c === 'd' && !doorOpen2);
-const blocksRay = c => c === '#' || c === 'W' || c === 'R' || c === 'r' || !!EMIT[c] || !!BRIDGE[c] || (c === 'D' && !doorOpen) || (c === 'd' && !doorOpen2);
+const isSolidChar = c => c === '#' || c === 'W' || c === 'Z' || c === 'G' || c === 'R' || c === 'r' || !!EMIT[c] || !!BRIDGE[c] || (c === 'D' && !doorOpen) || (c === 'd' && !doorOpen2);
+const blocksRay = c => c === '#' || c === 'W' || c === 'Z' || c === 'R' || c === 'r' || !!EMIT[c] || !!BRIDGE[c] || (c === 'D' && !doorOpen) || (c === 'd' && !doorOpen2);
 const blocksLaser = blocksRay;
 const pair = () => (portals.blue && portals.orange) ? [portals.blue, portals.orange] : null;
 const partner = p => p === portals.blue ? portals.orange : portals.blue;
@@ -1193,6 +1449,7 @@ function ignoredFor(b, cx, cy) {
 }
 function solidFor(b, cx, cy) {
   const c = charAt(cx, cy);
+  if (c === 'S') return b.kind !== 'player' && b.kind !== 'echo'; // spikes: deadly for figures, a floor for cubes
   if (!isSolidChar(c)) return false;
   if (c === 'W' && ignoredFor(b, cx, cy)) return false;
   return true;
@@ -1397,6 +1654,7 @@ function fire(color, tx, ty, actor) {
 const BR_OFF = 22, BR_H = 6;
 function traceBridges() {
   bridges = [];
+  if (!power) return;
   for (const pj of projectors) {
     let dx = pj.d, x = dx > 0 ? (pj.x + 1) * T : pj.x * T, y = pj.y * T + BR_OFF;
     for (let seg = 0; seg < 8; seg++) {
@@ -1520,6 +1778,7 @@ function updateTurrets(dt) {
       continue;
     }
     if (t.heldBy) { const [ax] = actorAim(t.heldBy); if (Math.abs(ax) > 0.15) t.face = ax > 0 ? 1 : -1; }
+    if (!power) { t.segs = []; t.charge = 0; t.lost = 0; t.lockWho = null; t.lockSegs = null; t.cool = 0; continue; }
     // two sight lines: eye height and a bit above, so hopping over the beam does not work
     const rays = turretRays(t);
     t.segs = rays.map(r => r.segs); t.rayFrom = rays.map(r => r.from || null);
@@ -1564,10 +1823,12 @@ function traceLasers() {
   lasers = [];
   for (const r of receivers) r.on = false;
   let hurt = false;
+  if (!power) return false;
   for (const em of emitters) {
     const res = traceRay(em.x * T + T / 2 + em.d[0] * T / 2, em.y * T + T / 2 + em.d[1] * T / 2, em.d[0], em.d[1], null);
     lasers.push(...res.segs);
     if (res.who === player) hurt = true;
+    if (res.who && res.who.kind === 'turret' && res.who.alive && state === 'play') disableTurret(res.who); // a laser burns out a turret's optics
     if (res.recv) { const h = res.recv, r = receivers.find(g => g.cells.some(c => c[0] === h[0] && c[1] === h[1])); if (r) r.on = true; }
   }
   return hurt;
@@ -1633,10 +1894,12 @@ function findCube(a, dx, dy, range) {
     if ((c.kind !== 'cube' && c.kind !== 'turret') || (c.heldBy && c.heldBy !== a)) continue;
     const vx = c.x - a.x, vy = c.y - (a.y - 3), d = Math.hypot(vx, vy) || 1;
     if (d > range) continue;
-    if ((vx * dx + vy * dy) / d < 0.8 && d > 34) continue;
+    const inCone = (vx * dx + vy * dy) / d >= 0.8;
+    if (!inCone && d > 34) continue;
     const hit = castRay(a.x, a.y - 3, vx / d, vy / d);
     if (hit && Math.hypot(hit.x - a.x, hit.y - (a.y - 3)) < d - 14) continue;
-    if (d < bd) { bd = d; best = c; }
+    const score = d + (inCone ? 0 : 1000); // something you aim at beats something merely touching you
+    if (score < bd) { bd = score; best = c; }
   }
   return best;
 }
@@ -1685,7 +1948,8 @@ function startRecording() {
   if (echo) { bodies = bodies.filter(b => b !== echo); burst(echo.x, echo.y, '#b48cff', 12); echo = null; }
   recording = {
     frames: [], pending: [], pendingG: [],
-    snap: { bodies: bodies.map(b => ({ ...b, _hb: b.heldBy ? bodies.indexOf(b.heldBy) : -1, _h: b.held ? bodies.indexOf(b.held) : -1 })), portals: { blue: clonePortal(portals.blue), orange: clonePortal(portals.orange) }, doorOpen, doorT, doorOpen2, doorT2 },
+    snap: { bodies: bodies.map(b => ({ ...b, _hb: b.heldBy ? bodies.indexOf(b.heldBy) : -1, _h: b.held ? bodies.indexOf(b.held) : -1 })), portals: { blue: clonePortal(portals.blue), orange: clonePortal(portals.orange) }, doorOpen, doorT, doorOpen2, doorT2,
+      power, cards: cards.map(c => c.got), cardsLeft },
   };
   Snd.rec(true);
 }
@@ -1699,6 +1963,9 @@ function stopRecording() {
   player = bodies.find(b => b.kind === 'player');
   portals = { blue: clonePortal(rec.snap.portals.blue), orange: clonePortal(rec.snap.portals.orange) };
   doorOpen = rec.snap.doorOpen; doorT = rec.snap.doorT; doorOpen2 = rec.snap.doorOpen2; doorT2 = rec.snap.doorT2; trail = [];
+  if (power !== rec.snap.power) { power = rec.snap.power; powerFx = 0.6; Snd.hum(power); }
+  cards.forEach((c, i) => { c.got = rec.snap.cards[i]; }); cardsLeft = rec.snap.cardsLeft;
+  for (const sw of switches) { sw.occ = true; sw.in = []; }
   echo = makeBody('echo', player.x, player.y);
   Object.assign(echo, { vx: player.vx, vy: player.vy, onGround: player.onGround, frames: rec.frames, i: 0, aimDx: 1, aimDy: 0 });
   bodies.push(echo);
@@ -1712,14 +1979,39 @@ function crashLines() {
 function toggleEcho() { if (recording) stopRecording(); else startRecording(); }
 let rewindFx = 0;
 
-function die() {
+function die(cause) {
   recording = null;
+  for (const c of cards) if (c.got && c.by === 'player') { c.got = false; c.t = 0; cardsLeft++; } // cards you carry fall back to their spot
+  if (hasPower && power !== !!LEVELS[li].powered) { power = !!LEVELS[li].powered; powerFx = 0.6; Snd.hum(power); } // the grid resets with you
+  for (const sw of switches) sw.occ = true; // the respawn itself never flips a lever
   for (const t of bodies) if (t.kind === 'turret') { t.charge = 0; t.cool = 0; t.lost = 0; }
   burst(player.x, player.y, '#b8ff6a', 22);
   player.x = player.sx; player.y = player.sy; player.vx = player.vy = 0; player.vang = 0;
   deathFlash = 0.35; trail = [];
   stats.deaths++; lvStat(li).d++; saveStats(); shake(4, 0.2);
-  Snd.die(); say(pickTxt('DEATH'), 1.8);
+  Snd.die(); say(pickTxt(cause === 'zap' ? 'DEATH_ZAP' : cause === 'spike' ? 'DEATH_SPIKE' : 'DEATH'), 1.8);
+}
+
+const spikeUp = (cx, cy) => !(isSolidChar(charAt(cx, cy - 1)) && !isSolidChar(charAt(cx, cy + 1)) && charAt(cx, cy + 1) !== 'S'); // ceiling spikes hang down
+const exitLocked = () => (LEVELS[li].darkExit ? power : !power) || cardsLeft > 0; // the very last exit is an emergency exit: it only opens when everything is off
+function touchesZ(b) { // real contact with a live tile: a face, not just a corner
+  const m = 1.5, L = b.x - b.w / 2, R = b.x + b.w / 2 - 0.01, U = b.y - b.h / 2, B = b.y + b.h / 2 - 0.01;
+  const any = (x0, x1, y0, y1) => { for (let cy = Math.floor(y0 / T); cy <= Math.floor(y1 / T); cy++) for (let cx = Math.floor(x0 / T); cx <= Math.floor(x1 / T); cx++) if (charAt(cx, cy) === 'Z') return true; return false; };
+  const k = 3; // a corner graze does not count
+  return any(L + k, R - k, U - m, B + m) || any(L - m, R + m, U + k, B - k);
+}
+function zapFx(b) {
+  burst(b.x, b.y, '#bfe3ff', 22); burst(b.x, b.y, '#3b9cff', 10); Snd.zap(); shake(5, 0.25);
+  for (let i = 0; i < 3; i++) beams.push({ x1: b.x + (Math.random() - 0.5) * 30, y1: b.y + b.h / 2 + 2, x2: b.x + (Math.random() - 0.5) * 16, y2: b.y - 10 + Math.random() * 10, color: '#cfe8ff', life: 0.14, w: 2 });
+}
+function setPower(on, sw) {
+  if (power === on) return;
+  power = on; powerFx = 1;
+  Snd.powerSw(on); shake(on ? 2 : 3, 0.2);
+  if (sw) burst(sw.x * T + T / 2, sw.y * T + T / 2, on ? '#7be08a' : '#ff6a5a', 12);
+  for (const t of bodies) if (t.kind === 'turret') { t.charge = 0; t.lost = 0; }
+  if (LEVELS[li].darkExit && !on) say(tr('finalOff'), 4);
+  else if (!subtitle) say(pickTxt(on ? 'POWER_ON' : 'POWER_OFF'), 2);
 }
 
 function step(dt) {
@@ -1785,6 +2077,24 @@ function step(dt) {
     let acid = false;
     for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++)
       if (charAt(cx, cy) === '~' && b.y + b.h / 2 > cy * T + 10 && !b.heldBy) acid = true; // a held cube floats in the beam
+    // spikes (figures only) and live floors (only you: your echo is immune to current)
+    if (b.kind === 'turret' && b.alive && power && zapCells.length && !b.heldBy && touchesZ(b)) { zapFx(b); disableTurret(b); } // a live floor fries turrets
+    if ((b.kind === 'player' || b.kind === 'echo') && !acid) {
+      for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) {
+        if (charAt(cx, cy) !== 'S' || b.x + b.w / 2 <= cx * T + 10 || b.x - b.w / 2 >= (cx + 1) * T - 10) continue; // standing on the edge next to them is safe
+        if (spikeUp(cx, cy) ? b.y + b.h / 2 > cy * T + 22 : b.y - b.h / 2 < cy * T + T - 22) { // only the lower part of the blades is deadly
+          if (b.kind === 'player') { burst(b.x, b.y, '#ff6a5a', 16); burst(b.x, b.y, '#c9d6e2', 8); Snd.spike(); die('spike'); }
+          else { burst(b.x, b.y, '#b48cff', 16); b.dead = true; }
+          break;
+        }
+      }
+      if (power && zapCells.length && !b.dead) {
+        if (touchesZ(b)) {
+          if (b.kind === 'player' && state === 'play') { zapFx(b); die('zap'); }
+          else if (Math.random() < dt * 20) spark({ x: b.x + (Math.random() - 0.5) * b.w, y: b.y + b.h / 2, vx: (Math.random() - 0.5) * 120, vy: -40 - Math.random() * 80, g: 300, drag: 1, size: 1.4, life: 0.3, color: '#bfe3ff' });
+        }
+      }
+    }
     if (acid || b.y > H + 60) {
       if (b.kind === 'player') die();
       else if (b.kind === 'echo') { burst(b.x, b.y, '#b48cff', 16); b.dead = true; }
@@ -1794,6 +2104,32 @@ function step(dt) {
   }
 
   if (echo && echo.dead) { bodies = bodies.filter(b => b !== echo); echo = null; }
+  // power levers: anything that newly enters the lever cell flips it (you, your echo, a cube)
+  leverCd = Math.max(0, leverCd - dt);
+  let flipBy = null;
+  for (const sw of switches) {
+    const x0 = sw.x * T + 5, x1 = (sw.x + 1) * T - 5, y0 = sw.y * T + 2, y1 = (sw.y + 1) * T - 2;
+    const inside = bodies.filter(b => (b.kind === 'player' || b.kind === 'echo' || b.kind === 'cube' || b.kind === 'turret') && b.x + b.w / 2 > x0 && b.x - b.w / 2 < x1 && b.y + b.h / 2 > y0 && b.y - b.h / 2 < y1);
+    const prev = sw.in || []; sw.in = inside;
+    if (sw.occ) { sw.occ = false; continue; } // ignore whatever stands there when the chamber loads
+    sw.cd = Math.max(0, (sw.cd || 0) - dt);
+    if (state === 'play' && leverCd <= 0 && sw.cd <= 0 && inside.some(b => !prev.includes(b))) flipBy = sw;
+  }
+  // one flip per touch: a lever stays locked for a moment (a jump straight through it is one flip),
+  // and levers side by side never flip twice for the same body
+  if (flipBy) { setPower(!power, flipBy); for (const sw of switches) if (Math.abs(sw.x - flipBy.x) + Math.abs(sw.y - flipBy.y) <= 1) sw.cd = 0.7; leverCd = 0.15; }
+  // key cards: you or your echo pick them up
+  for (const c of cards) {
+    c.t += dt; if (c.got) continue;
+    for (const b of bodies) {
+      if (b.kind !== 'player' && b.kind !== 'echo') continue;
+      if (Math.abs(b.x - c.x) < b.w / 2 + 9 && Math.abs(b.y - c.y) < b.h / 2 + 11) {
+        c.got = true; c.by = b.kind; c.t = 0; cardsLeft--; burst(c.x, c.y, '#ffd27a', 18); burst(c.x, c.y, '#ffffff', 6); Snd.card(cardsLeft === 0);
+        if (cardsLeft === 0 && state === 'play') say(pickTxt('CARD'), 2.2);
+        break;
+      }
+    }
+  }
   if (bodies.some(b => b.kind === 'turret' && b.dead)) bodies = bodies.filter(b => !(b.kind === 'turret' && b.dead));
   // button + door
   for (const g of btnGroups) g.on = false;
@@ -1833,6 +2169,10 @@ function step(dt) {
   if (state === 'play') {
     for (let cy = 0; cy < ROWS; cy++) for (let cx = 0; cx < COLS; cx++) if (grid[cy][cx] === 'E' || grid[cy][cx] === 'K') {
       if (p.x + p.w / 2 > cx * T + 6 && p.x - p.w / 2 < (cx + 1) * T - 6 && p.y + p.h / 2 > (cy - 1) * T && p.y - p.h / 2 < (cy + 1) * T) {
+        if (exitLocked()) {
+          if (lockT <= 0) { Snd.fail(); say(tr(cardsLeft > 0 ? 'needCard' : LEVELS[li].darkExit ? 'needDark' : 'needPower'), 1.8); }
+          lockT = 1.5; continue;
+        }
         state = 'win'; winTimer = 2.8; burst(p.x, p.y, '#7be08a', 26); Snd.win(); lvStat(li).w++; saveStats();
         if (li === LEVELS.length - 1) { beginOutro(); renderDots(); break; }
         if (li === 47 && LEVELS[48]) { if (unlocked < 49) { unlocked = 49; try { localStorage.setItem('portalschleife-unlocked', '49'); } catch (e) {} } state = 'alarm'; cine = { kind: 'alarm', t: 0, cues: {} }; subtitle = null; renderDots(); break; }
@@ -1860,6 +2200,16 @@ function step(dt) {
     const out = 25 + Math.random() * 45;
     spark({ x: pt.c.x + tx * off + pt.n.x * 3, y: pt.c.y + ty * off + pt.n.y * 3, vx: pt.n.x * out + tx * (Math.random() - 0.5) * 30,
       vy: pt.n.y * out + ty * (Math.random() - 0.5) * 30, drag: 1.2, size: 1.5 + Math.random() * 1.5, life: 0.5 + Math.random() * 0.6, color: COL[pt.color] });
+  }
+  lockT = Math.max(0, lockT - dt);
+  revealT = Math.max(0, revealT - dt); powerFx = Math.max(0, powerFx - dt);
+  { // darkness: emergency lights flicker out at the start of an unpowered chamber
+    const want = power ? 0 : revealT > 0 ? (revealT > 1.0 ? 0 : SETTINGS.calm ? 0.5 : (Math.random() < 0.3 ? 0.85 : 0.25)) : 1;
+    darkA = approach(darkA, want, dt * (power ? 2.2 : revealT > 0 ? 9 : 3));
+  }
+  if (power) for (const [zx, zy] of zapCells) if (Math.random() < dt * 0.9) {
+    const up = !isSolidChar(charAt(zx, zy - 1)), sx = zx * T + 3 + Math.random() * (T - 6);
+    spark({ x: sx, y: up ? zy * T - 1 : zy * T + T / 2, vx: (Math.random() - 0.5) * 70, vy: -30 - Math.random() * 50, g: 260, drag: 1.5, size: 1.3, life: 0.3, color: Math.random() < 0.5 ? '#bfe3ff' : '#7fc8ff' });
   }
   for (const [ax, ay] of acidCells) if (Math.random() < dt * 1.4)
     spark({ x: ax * T + 4 + Math.random() * (T - 8), y: ay * T + 12, vy: -12 - Math.random() * 18, drag: 0.5, size: 1.5 + Math.random() * 2, life: 0.6 + Math.random() * 0.5, color: '#b8ff6a' });
@@ -1897,7 +2247,7 @@ function rr(x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x
 // ---------- static art layer: background, wall panels and fixture housings, pre-rendered once per level ----------
 let staticCv = null, staticKey = '';
 const hash2 = (x, y, n) => { let h = (x * 374761393 + y * 668265263 + (n || 0) * 2147483647) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
-const isWallCh = c => c === '#' || c === 'W' || !!EMIT[c] || !!BRIDGE[c] || c === 'R' || c === 'r';
+const isWallCh = c => c === '#' || c === 'W' || c === 'Z' || !!EMIT[c] || !!BRIDGE[c] || c === 'R' || c === 'r';
 function rivet(g, x, y, light) {
   g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x, y + 1, 2.2, 1.6);
   g.fillStyle = light ? '#8d98a3' : '#4b5866'; g.fillRect(x, y, 2.2, 2.2);
@@ -2099,6 +2449,12 @@ function drawTiles() {
         const bx = x + 4 + hsh * (T - 8), by = y + T - 3 - ph * (T - 14);
         ctx.fillStyle = `rgba(200,255,140,${0.55 * (1 - ph)})`; ctx.beginPath(); ctx.arc(bx, by, 1 + hsh * 1.3, 0, Math.PI * 2); ctx.fill();
       }
+    } else if (c === 'Z') {
+      drawLiveFloor(cx, cy, x, y);
+    } else if (c === 'S') {
+      drawSpikes(cx, cy, x, y);
+    } else if (c === 'X') {
+      drawLever(cx, cy, x, y);
     } else if (c === 'K') {
       const bob = Math.sin(time * 3) * 3, pul = 0.7 + 0.3 * Math.sin(time * 5);
       // pedestal
@@ -2109,21 +2465,132 @@ function drawTiles() {
       if (!gunTaken) { ctx.save(); ctx.translate(x + T / 2, y + 6 + bob); drawGunSprite(); ctx.restore(); }
     } else if (c === 'E') {
       const top = (cy - 1) * T, pulse = 0.5 + 0.5 * Math.sin(time * 4);
+      const dead = LEVELS[li].darkExit ? power : !power, lockd = !dead && cardsLeft > 0, blink = lockT > 0 && Math.sin(time * 24) > 0;
+      const rgb = dead ? '70,84,98' : lockd ? '255,106,90' : '123,224,138', lineC = dead ? '#3a4653' : lockd ? (blink ? '#ffd0c8' : '#ff6a5a') : '#7be08a';
       plate(ctx, x + 1, top + 1, T - 2, T * 2 - 1, METAL);
       const eg = ctx.createLinearGradient(0, top + 4, 0, top + T * 2);
-      eg.addColorStop(0, '#061209'); eg.addColorStop(1, `rgba(40,120,55,${0.55 + pulse * 0.25})`);
+      eg.addColorStop(0, dead ? '#07090b' : lockd ? '#120606' : '#061209'); eg.addColorStop(1, dead ? 'rgba(30,36,42,0.6)' : lockd ? `rgba(120,40,34,${0.45 + pulse * 0.2})` : `rgba(40,120,55,${0.55 + pulse * 0.25})`);
       ctx.fillStyle = eg; ctx.fillRect(x + 5, top + 5, T - 10, T * 2 - 7);
-      ctx.strokeStyle = '#7be08a'; ctx.lineWidth = 2; ctx.strokeRect(x + 5, top + 5, T - 10, T * 2 - 7);
-      ctx.fillStyle = '#c9ffd2'; ctx.fillRect(x + 6, top + T * 2 - 4, T - 12, 2);
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(x + T / 2, top + T * 2 - 3, 18, `rgba(123,224,138,${0.35 + pulse * 0.2})`, 1); ctx.restore(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = lineC; ctx.lineWidth = 2; ctx.strokeRect(x + 5, top + 5, T - 10, T * 2 - 7);
+      ctx.fillStyle = dead ? '#4a5866' : lockd ? '#ffc0b8' : '#c9ffd2'; ctx.fillRect(x + 6, top + T * 2 - 4, T - 12, 2);
+      if (!dead) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(x + T / 2, top + T * 2 - 3, 18, `rgba(${rgb},${0.35 + pulse * 0.2})`, 1); ctx.restore(); ctx.globalAlpha = 1; }
       rivet(ctx, x + 2, top + 2, false); rivet(ctx, x + T - 4, top + 2, false);
-      ctx.fillStyle = `rgba(123,224,138,${0.25 + pulse * 0.45})`;
-      for (let i = 0; i < 3; i++) {
+      if (lockd) { // key card slots above the frame
+        const n = cards.length;
+        for (let i = 0; i < n; i++) { const sx = x + T / 2 - n * 4 + i * 8 + 1, got = cards.filter(c2 => c2.got).length > i;
+          ctx.fillStyle = '#0b0f13'; ctx.fillRect(sx, top - 6, 6, 5); ctx.fillStyle = got ? '#ffd27a' : '#5a2a26'; ctx.fillRect(sx + 1, top - 5, 4, 3); }
+      }
+      ctx.fillStyle = `rgba(${rgb},${dead ? 0.25 : 0.25 + pulse * 0.45})`;
+      if (lockd) { // a lock instead of chevrons
+        ctx.fillRect(x + 10, top + 30, T - 20, 12); ctx.strokeStyle = `rgba(${rgb},0.8)`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x + T / 2, top + 30, 4.5, Math.PI, 0); ctx.stroke();
+        ctx.fillStyle = '#120606'; ctx.fillRect(x + T / 2 - 1, top + 34, 2, 4);
+      } else for (let i = 0; i < 3; i++) {
         const yy = top + 18 + i * 12;
         ctx.beginPath(); ctx.moveTo(x + 10, yy); ctx.lineTo(x + T / 2, yy + 6); ctx.lineTo(x + T - 10, yy); ctx.lineTo(x + T - 10, yy + 3); ctx.lineTo(x + T / 2, yy + 9); ctx.lineTo(x + 10, yy + 3); ctx.closePath(); ctx.fill();
       }
     }
   }
+}
+
+// Live floor: an insulated panel whose open faces carry current while the power is on. Your echo is immune.
+function drawLiveFloor(cx, cy, x, y) {
+  plate(ctx, x, y, T, T, { base: '#0b1016', face: '#18212b', hi: '#283545', lo: '#10161d' });
+  const live = power, open = (dx, dy) => { const c = charAt(cx + dx, cy + dy); return !isSolidChar(c) && c !== 'Z' && c !== 'G'; };
+  for (let i = 0; i < 4; i++) { ctx.fillStyle = '#212c38'; ctx.fillRect(x + 4, y + 5 + i * 6.5, T - 8, 3); ctx.fillStyle = live ? '#4f86b8' : '#2c3a48'; ctx.fillRect(x + 4, y + 5 + i * 6.5, T - 8, 1); }
+  for (const [rx, ry] of [[2, 2], [T - 4, 2], [2, T - 4], [T - 4, T - 4]]) { ctx.fillStyle = live ? '#c08a3a' : '#5a4630'; ctx.fillRect(x + rx, y + ry, 2, 2); }
+  const sides = [[0, -1], [0, 1], [-1, 0], [1, 0]].filter(([dx, dy]) => open(dx, dy));
+  for (const [dx, dy] of sides) {
+    const ex = dx > 0 ? x + T - 2 : x, ey = dy > 0 ? y + T - 2 : y, w = dx ? 2 : T, h = dy ? 2 : T;
+    ctx.fillStyle = live ? '#9fd4ff' : '#33414f'; ctx.fillRect(ex, ey, w, h);
+    if (!live) { // dead rail: warning ticks
+      ctx.fillStyle = '#c9a23a'; for (let i = 3; i < T - 2; i += 8) dx ? ctx.fillRect(ex, y + i, 2, 3) : ctx.fillRect(x + i, ey, 3, 2);
+    }
+  }
+  if (!live || !sides.length) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const tq = Math.floor(time * 18);
+  for (const [dx, dy] of sides) {
+    const along = dx === 0, base = dy < 0 ? y : dy > 0 ? y + T : dx < 0 ? x : x + T;
+    ctx.strokeStyle = 'rgba(160,215,255,0.85)'; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let i = 0; i <= 6; i++) {
+      const a = i / 6 * T, j = (hash2(cx * 7 + i, cy * 13 + dx * 3 + dy, tq) - 0.5) * 7, o = (dy < 0 || dx < 0 ? -1 : 1) * (2 + Math.abs(j) * 0.6);
+      const px = along ? x + a : base + o, py = along ? base + o + j * 0.3 : y + a;
+      i ? ctx.lineTo(along ? px : px + j * 0.3, py) : ctx.moveTo(along ? px : px + j * 0.3, py);
+    }
+    ctx.stroke();
+    const gx = along ? x + T / 2 : base, gy = along ? base : y + T / 2;
+    glowDot(gx, gy, 20, 'rgba(90,170,255,0.22)', 0.8 + 0.2 * Math.sin(time * 30 + cx));
+  }
+  ctx.restore(); ctx.globalAlpha = 1;
+}
+// Spikes: four steel blades on a base strip; they hang from the ceiling when there is nothing below them.
+function drawSpikes(cx, cy, x, y) {
+  ctx.save();
+  if (!spikeUp(cx, cy)) { ctx.translate(0, y * 2 + T); ctx.scale(1, -1); }
+  ctx.fillStyle = '#12171c'; ctx.fillRect(x, y + T - 6, T, 6);
+  ctx.fillStyle = '#3a4653'; ctx.fillRect(x, y + T - 6, T, 1);
+  for (let i = 0; i < 4; i++) {
+    const bx = x + i * 8, tipY = y + 8 + hash2(cx, cy, 80 + i) * 3;
+    ctx.beginPath(); ctx.moveTo(bx + 0.5, y + T - 6); ctx.lineTo(bx + 4, tipY); ctx.lineTo(bx + 4, y + T - 6); ctx.closePath(); ctx.fillStyle = '#c4ced8'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(bx + 4, tipY); ctx.lineTo(bx + 7.5, y + T - 6); ctx.lineTo(bx + 4, y + T - 6); ctx.closePath(); ctx.fillStyle = '#66727e'; ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(bx + 3.5, tipY, 1, 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(bx, y + T - 7, 8, 1);
+  }
+  ctx.restore();
+}
+// Power lever: a wall box. Anything that enters the cell flips it.
+function drawLever(cx, cy, x, y) {
+  plate(ctx, x + 6, y + 3, T - 12, T - 6, METAL);
+  ctx.fillStyle = '#0a0d10'; ctx.fillRect(x + 14, y + 9, 4, 16);
+  ctx.fillStyle = '#e0a52c'; ctx.beginPath(); ctx.moveTo(x + 17, y + 5); ctx.lineTo(x + 13, y + 11); ctx.lineTo(x + 16, y + 11); ctx.lineTo(x + 14, y + 16); ctx.lineTo(x + 19, y + 9.5); ctx.lineTo(x + 16, y + 9.5); ctx.closePath(); ctx.globalAlpha = 0.25; ctx.fill(); ctx.globalAlpha = 1;
+  const k = power ? 1 : 0, hy = y + 11 + (1 - k) * 10;
+  ctx.strokeStyle = '#8796a4'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 16, y + 17); ctx.lineTo(x + 16 + (k ? 5 : 5), hy); ctx.stroke();
+  ctx.fillStyle = power ? '#4fae5c' : '#a8362c'; ctx.beginPath(); ctx.arc(x + 21, hy, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = power ? '#9ff0aa' : (Math.sin(time * 5) > 0 ? '#ff6a5a' : '#5a1a16'); ctx.fillRect(x + 9, y + 6, 3, 3);
+}
+function drawCards() {
+  for (const c of cards) {
+    if (c.got) {
+      if (c.t < 0.5) { ctx.strokeStyle = `rgba(255,210,122,${1 - c.t / 0.5})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(c.x, c.y, 6 + c.t * 50, 0, Math.PI * 2); ctx.stroke(); }
+      continue;
+    }
+    const bob = Math.sin(time * 3 + c.x * 0.1) * 3, tilt = Math.sin(time * 1.7 + c.y) * 0.18, sq = Math.abs(Math.cos(time * 1.3 + c.x));
+    ctx.save(); ctx.translate(c.x, c.y + bob);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(0, 0, 20, 'rgba(255,190,90,0.35)', 0.7 + 0.3 * Math.sin(time * 4)); ctx.restore(); ctx.globalAlpha = 1;
+    ctx.scale(1.35, 1.35); ctx.rotate(tilt); ctx.scale(0.35 + 0.65 * sq, 1);
+    rr(-10, -7, 20, 14, 2.5); ctx.fillStyle = '#2b333d'; ctx.fill();
+    rr(-9, -6, 18, 12, 2); ctx.fillStyle = '#e9eef2'; ctx.fill();
+    ctx.fillStyle = '#ff8c2a'; ctx.fillRect(-9, -6, 18, 3.5);
+    ctx.fillStyle = '#d9b25a'; ctx.fillRect(-7, -0.5, 5, 4); ctx.fillStyle = '#9a7a30'; ctx.fillRect(-5.5, -0.5, 1, 4); ctx.fillRect(-7, 1, 5, 1);
+    ctx.fillStyle = '#8796a4'; ctx.fillRect(0, 0, 7, 1); ctx.fillRect(0, 2.5, 5, 1);
+    ctx.restore();
+  }
+}
+// Darkness without power: only small pools of light around you, your echo, the levers, portals, cards and glowing acid.
+let darkCv = null;
+function drawDark() {
+  if (darkA < 0.01) return;
+  const S = 0.5, w = Math.ceil(W * S), h = Math.ceil(H * S);
+  if (!darkCv) darkCv = document.createElement('canvas');
+  if (darkCv.width !== w || darkCv.height !== h) { darkCv.width = w; darkCv.height = h; }
+  const g = darkCv.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, w, h);
+  g.fillStyle = `rgba(3,5,8,${0.95 * darkA})`; g.fillRect(0, 0, w, h);
+  g.globalCompositeOperation = 'destination-out'; g.setTransform(S, 0, 0, S, 0, 0);
+  const hole = (x, y, r, a) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.45, `rgba(0,0,0,${a * 0.9})`); gr.addColorStop(0.75, `rgba(0,0,0,${a * 0.45})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); };
+  hole(player.x, player.y - 4, 120 * (0.97 + Math.random() * 0.03), 1);
+  if (echo) hole(echo.x, echo.y, 58, 0.75);
+  for (const sw of switches) hole(sw.x * T + T / 2, sw.y * T + T / 2, 46, 0.9);
+  for (const p of [portals.blue, portals.orange]) if (p) hole(p.c.x, p.c.y, 48, 0.65);
+  for (const c of cards) if (!c.got) hole(c.x, c.y, 28, 0.6);
+  for (const [ax, ay] of acidCells) hole(ax * T + T / 2, ay * T + 14, 26, 0.35);
+  for (const b of bodies) if (b.heldBy) hole(b.x, b.y, 30, 0.4);
+  if (LEVELS[li].darkExit) for (const [ex, ey] of exitCells) hole(ex * T + T / 2, ey * T, 56, 0.9); // the emergency exit glows in the dark
+  ctx.drawImage(darkCv, 0, 0, W, H);
+  // the lever's status light reads from anywhere
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const sw of switches) glowDot(sw.x * T + 10, sw.y * T + 7, 12, Math.sin(time * 5) > 0 ? 'rgba(255,90,70,0.6)' : 'rgba(255,90,70,0.2)', darkA);
+  ctx.restore(); ctx.globalAlpha = 1;
 }
 
 // Grille: a framed wire-mesh panel. Portal shots pass through, bodies don't.
@@ -2275,12 +2742,12 @@ function drawBodyShape(b) {
     ctx.fillStyle = k > 0.6 ? '#ff8a5a' : '#2f3943'; ctx.fillRect(f > 0 ? 11 : -12, -8, 1, 2.2); ctx.fillRect(f > 0 ? 11 : -12, -4.5, 1, 2.2);
     // antenna
     ctx.strokeStyle = '#2b333d'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-f * 4, -13); ctx.lineTo(-f * 6, -18); ctx.stroke();
-    ctx.fillStyle = b.alive ? (Math.sin(time * 6) > 0 ? '#ff4a3a' : '#5a1a16') : '#2b333d'; ctx.fillRect(-f * 6 - 1, -19.5, 2, 2);
+    ctx.fillStyle = b.alive && power ? (Math.sin(time * 6) > 0 ? '#ff4a3a' : '#5a1a16') : '#2b333d'; ctx.fillRect(-f * 6 - 1, -19.5, 2, 2);
     // big lens
     const ex = f * 2.6, ey = -6.2;
     ctx.fillStyle = '#05080b'; ctx.beginPath(); ctx.arc(ex, ey, 4.4, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#6c7a89'; ctx.lineWidth = 1; ctx.stroke();
-    const flick = b.alive ? 1 : (Math.random() < 0.15 ? 0.8 : 0.05);
+    const flick = b.alive ? (power ? 1 : 0.05) : (Math.random() < 0.15 ? 0.8 : 0.05);
     if (b.alive || flick > 0.5) {
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(ex, ey, 8 + k * 9, `rgba(255,60,40,${(0.55 + 0.45 * k) * flick})`, 1); ctx.restore(); ctx.globalAlpha = 1;
       ctx.fillStyle = k > 0 ? '#ff9a88' : '#ff3a2a'; ctx.beginPath(); ctx.arc(ex, ey, 2.4 + k * 0.8, 0, Math.PI * 2); ctx.fill();
@@ -2639,7 +3106,7 @@ function drawScanCone(t, e0) {
 function drawTurretBeams() {
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const t of bodies) {
-    if (t.kind !== 'turret' || !t.alive || !t.segs) continue;
+    if (t.kind !== 'turret' || !t.alive || !t.segs || !power) continue;
     const k = Math.min(1, t.charge / TURRET_CHARGE), e0 = turretEye(t);
     const pts = [];
     if (t.lockWho && t.lockSegs && t.lockSegs.length) {
@@ -2824,6 +3291,8 @@ let cine = null;      // { kind: 'title' | 'intro' | 'outro' | 'credits', t, cue
 let visor = 1;        // player's visor light, 0 = asleep
 const stats = (() => { let s = {}; try { s = JSON.parse(localStorage.getItem('portalschleife-stats')) || {}; } catch (e) {} for (const n of ['deaths', 'portals', 'echoes', 'time']) s[n] = +s[n] || 0; return s; })();
 const lvStat = i => { stats.levels = stats.levels || {}; return stats.levels[i] = stats.levels[i] || { d: 0, r: 0, t: 0, w: 0 }; };
+// players who finished the old final chamber (56) get the new chambers unlocked
+try { if (stats.levels && stats.levels[55] && stats.levels[55].w > 0 && unlocked < 57) { unlocked = 57; localStorage.setItem('portalschleife-unlocked', '57'); } } catch (e) {}
 function saveStats() { try { localStorage.setItem('portalschleife-stats', JSON.stringify(stats)); } catch (e) {} }
 const easeIO = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -3095,6 +3564,7 @@ function render() {
   drawStencil();
   drawMotes();
   drawTiles();
+  drawCards();
   drawLaserTiles();
   drawLights();
   drawBridges();
@@ -3113,6 +3583,7 @@ function render() {
   drawParticles();
   ctx.globalAlpha = 1;
   for (const f of flashes) glowFlash(f);
+  drawDark();
   drawSleepZ();
   drawCrashGhosts();
   ctx.setTransform(k, 0, 0, k, 0, 0);
@@ -3125,6 +3596,7 @@ function render() {
   }
 
   drawVignette();
+  if (powerFx > 0.4 && power && !SETTINGS.calm) { ctx.fillStyle = `rgba(3,5,8,${Math.random() < 0.4 ? 0.7 * powerFx : 0})`; ctx.fillRect(0, 0, W, H); }
   if (flicker > 0) { const on = Math.sin(flicker * 60) > 0.3 ? 0 : 0.07; ctx.fillStyle = `rgba(0,0,0,${on})`; ctx.fillRect(0, 0, W, H); }
   drawAim();
   drawEchoHud();
