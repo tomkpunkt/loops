@@ -2540,7 +2540,12 @@ function drawSpikes(cx, cy, x, y) {
 }
 // Power lever: a wall box. Anything that enters the cell flips it.
 function drawLever(cx, cy, x, y) {
-  plate(ctx, x + 6, y + 3, T - 12, T - 6, METAL);
+  const up = charAt(cx, cy - 1) === 'X', dn = charAt(cx, cy + 1) === 'X';
+  if (up || dn) { // a lever curtain: one tall panel, the handle sits in the lowest cell
+    plate(ctx, x + 6, y + (up ? 0 : 3), T - 12, T - (up ? 0 : 3) - (dn ? 0 : 3), METAL);
+    ctx.fillStyle = power ? 'rgba(123,224,138,0.35)' : 'rgba(255,106,90,0.35)'; ctx.fillRect(x + 15, y + (up ? 0 : 6), 2, T - (up ? 0 : 6) - (dn ? 0 : 6));
+    if (dn) return;
+  } else plate(ctx, x + 6, y + 3, T - 12, T - 6, METAL);
   ctx.fillStyle = '#0a0d10'; ctx.fillRect(x + 14, y + 9, 4, 16);
   ctx.fillStyle = '#e0a52c'; ctx.beginPath(); ctx.moveTo(x + 17, y + 5); ctx.lineTo(x + 13, y + 11); ctx.lineTo(x + 16, y + 11); ctx.lineTo(x + 14, y + 16); ctx.lineTo(x + 19, y + 9.5); ctx.lineTo(x + 16, y + 9.5); ctx.closePath(); ctx.globalAlpha = 0.25; ctx.fill(); ctx.globalAlpha = 1;
   const k = power ? 1 : 0, hy = y + 11 + (1 - k) * 10;
