@@ -1,1 +1,73 @@
-# loops
+# Loops
+
+![Loops – Titel und zwei Testkammern](docs/screenshots.png)
+
+**Deutsch** · [English](#english)
+
+Ein 2D-Portal-Puzzlespiel im Browser. Zwei Portale, nahtlose Bewegung, eine sarkastische Testleitung und eine Reihe von Testkammern, die mehr verlangen, als sie zugeben.
+
+Das ganze Spiel steckt in einer einzigen Datei, `index.html`, ohne Abhängigkeiten oder Build-Schritt. Einfach im Browser öffnen.
+
+## Spielen
+
+- **Lokal:** `index.html` herunterladen und im Browser öffnen.
+- **Online:** über GitHub Pages (Settings → Pages → Branch `main`, Ordner `/`), oder die Datei bei itch.io / Netlify Drop hochladen.
+
+## Steuerung
+
+| | Tastatur & Maus | Touch | Gamepad |
+|---|---|---|---|
+| Laufen | A / D | linker Stick | linker Stick |
+| Springen | W / Leertaste | „Sprung“ oder Stick nach oben | A |
+| Blaues / oranges Portal | Links- / Rechtsklick | Portal-Tasten + rechter Stick | LB/LT · RB/RT |
+| Neu starten | R | ↻ | Start |
+| Hinweis & Kammern | H | ? | – |
+
+Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu.
+
+## Features
+
+- Nahtlose Portale: Körper sind halb hier und halb dort, Schwung bleibt erhalten
+- Laser, Lichtbrücken, Gitter, Säure, Schalter und Türen auf zwei Kanälen
+- Prozedural gezeichnete Grafik im Pixel-Industriestil, Partikel und Licht
+- Prozedurale „Mumble“-Sprachausgabe der Testleitung (WebAudio)
+- Titel, Intro und Outro mit Pixel-Zoom
+- Deutsch und Englisch (automatisch nach Gerätesprache, umschaltbar unter „?“)
+- Fortschritt und Statistik werden lokal im Browser gespeichert
+
+---
+
+## English
+
+A 2D portal puzzle game for the browser. Two portals, seamless movement, a sarcastic Test Control and a series of test chambers that ask more of you than they let on.
+
+The whole game is a single file, `index.html`, with no dependencies and no build step. Just open it in a browser.
+
+### Play
+
+- **Locally:** download `index.html` and open it in a browser.
+- **Online:** via GitHub Pages (Settings → Pages → branch `main`, folder `/`), or upload the file to itch.io / Netlify Drop.
+
+### Controls
+
+| | Keyboard & mouse | Touch | Gamepad |
+|---|---|---|---|
+| Move | A / D | left stick | left stick |
+| Jump | W / Space | "Jump" or push stick up | A |
+| Blue / orange portal | left / right click | portal buttons + right stick | LB/LT · RB/RT |
+| Restart | R | ↻ | Start |
+| Hint & chambers | H | ? | – |
+
+More abilities and buttons unlock as you play.
+
+### Features
+
+- Seamless portals: bodies are half here and half there, momentum is preserved
+- Lasers, light bridges, grilles, acid, switches and doors on two channels
+- Procedurally drawn industrial pixel-style art, particles and lighting
+- Procedural "mumble" voice for Test Control (WebAudio)
+- Title, intro and outro with pixelated zoom
+- German and English (auto-detected from device language, switchable under "?")
+- Progress and stats are stored locally in the browser
+
+Inspired by *Link Loop* and the *Portal* series. Fan project, not affiliated with either.
