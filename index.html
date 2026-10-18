@@ -61,7 +61,7 @@ canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:none;cur
 .debug #cnum::after{content:' · DEBUG';color:#ff6a5a}
 .help .close{align-self:flex-start;margin-top:4px}
 .iconbtn[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
-.iconbtn{width:38px;height:34px;padding:0;font:700 1rem var(--display)}
+.iconbtn{width:38px;height:34px;padding:0;font:700 1rem var(--display);display:inline-grid;place-items:center}
 .chamber{font-family:var(--display);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.95rem}
 .chamber small{color:var(--muted);font-weight:500;font-family:var(--mono);letter-spacing:.06em;margin-right:8px}
 .hint{color:var(--fg);margin:0;line-height:1.55;min-width:0}
@@ -121,7 +121,7 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
     <div class="chamber"><small id="cnum">01 / 48</small><span id="cname">Erster Schritt</span></div>
     <div class="right">
       <button class="btn iconbtn" id="helpBtn" type="button" aria-label="Hinweis und Kammern" aria-expanded="false">?</button>
-      <button class="btn iconbtn" id="soundBtn" type="button" aria-label="Ton an oder aus" aria-pressed="true">♪</button>
+      <button class="btn iconbtn" id="optsBtn" type="button" aria-label="Optionen" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <button class="btn iconbtn" id="restart" type="button" aria-label="Kammer neu starten">↻</button>
     </div>
   </header>
@@ -136,9 +136,15 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
         <h3 data-t="hChambers">Kammern</h3>
         <div class="dots" id="dots" aria-label="Kammer wählen"></div>
         <h3 data-t="hControls">Steuerung</h3>
-        <p class="keys"><kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>F</kbd> Echo (ab 17) · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen (ab 33)</p>
+        <p class="keys"><kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo (ab 17) · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen (ab 33)</p>
         <p class="taphint">Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Ab Kammer 17 gibt es die Echo-Taste, ab Kammer 33 Greifen und Werfen.</p>
         <p class="padnote" id="padnote" hidden>Gamepad: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start neu.</p>
+        <button class="btn close" id="helpClose" type="button">Weiterspielen</button>
+      </div>
+    </div>
+    <div class="help" id="opts" hidden>
+      <div class="helpbody">
+        <h2 data-t="hOpts">Optionen</h2>
         <h3 data-t="hSettings">Einstellungen</h3>
         <div class="settings">
           <label><span data-t="sMusic">Musik</span><input type="range" min="0" max="1" step="0.05" data-vol="music"></label>
@@ -148,7 +154,7 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
         </div>
         <h3 data-t="hLang">Sprache</h3>
         <div class="langs"><button class="btn" type="button" data-lang="de" lang="de">Deutsch</button><button class="btn" type="button" data-lang="en" lang="en">English</button></div>
-        <button class="btn close" id="helpClose" type="button">Weiterspielen</button>
+        <button class="btn close" id="optsClose" type="button" data-t="resume">Weiterspielen</button>
       </div>
     </div>
   </div>
@@ -184,7 +190,7 @@ function saveSettings() { try { localStorage.setItem('loops-settings', JSON.stri
 // ---------- sound (synthesized, starts after first interaction) ----------
 const Snd = (() => {
   let ac = null, master = null, muted = false, humGain = null, sfxBus = null, voiceBus = null, musicBus = null;
-  try { muted = localStorage.getItem('portalschleife-muted') === '1'; } catch (e) {}
+
   function init() {
     if (ac) { if (ac.state === 'suspended') ac.resume().catch(() => {}); return; }
     try {
@@ -966,8 +972,8 @@ const TXT = {
     // DOM
     aHelp: 'Hinweis und Kammern', aSound: 'Ton an oder aus', aRestart: 'Kammer neu starten', aCanvas: 'Spielfeld', aDots: 'Kammer wählen',
     hHint: 'Hinweis', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
-    hSettings: 'Einstellungen', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren',
-    keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
+    hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren',
+    keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     padnote: 'Gamepad: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start neu.',
     resume: 'Weiterspielen', move: 'Laufen', aim: 'Zielen', blue: 'Blaues Portal', orange: 'Oranges Portal', jump: 'Sprung', echo: 'Echo', grab: 'Greifen', throw: 'Werfen'
@@ -1004,8 +1010,8 @@ const TXT = {
     doneSub: 'Restart or pick a chamber above', nextSub: 'Loading next chamber …',
     aHelp: 'Hint and chambers', aSound: 'Sound on or off', aRestart: 'Restart chamber', aCanvas: 'Playfield', aDots: 'Choose chamber',
     hHint: 'Hint', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
-    hSettings: 'Settings', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects',
-    keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
+    hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects',
+    keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     padnote: 'Gamepad: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start restart.',
     resume: 'Resume', move: 'Move', aim: 'Aim', blue: 'Blue portal', orange: 'Orange portal', jump: 'Jump', echo: 'Echo', grab: 'Grab', throw: 'Throw',
@@ -3175,9 +3181,17 @@ function layout() {
   resize();
 }
 window.addEventListener('resize', layout);
-let helpOpen = false;
+let helpOpen = false, panel = null;
+function setPanel(name) {
+  panel = name; helpOpen = !!name;
+  $('help').hidden = name !== 'help'; $('opts').hidden = name !== 'opts';
+  $('helpBtn').setAttribute('aria-expanded', String(name === 'help')); $('optsBtn').setAttribute('aria-expanded', String(name === 'opts'));
+  input.left = input.right = input.jump = false; input.axis = 0;
+  if (!name) canvas.focus();
+}
 function setHelp(on) {
-  helpOpen = on; $('help').hidden = !on; $('helpBtn').setAttribute('aria-expanded', String(on));
+  if (on) return setPanel('help');
+  panel = null; helpOpen = false; $('help').hidden = true; $('opts').hidden = true; $('helpBtn').setAttribute('aria-expanded', 'false'); $('optsBtn').setAttribute('aria-expanded', 'false');
   input.left = input.right = input.jump = false; input.axis = 0;
   if (!on) canvas.focus();
 }
@@ -3192,8 +3206,10 @@ $('helpBtn').addEventListener('click', () => {
     say(debugMode ? 'DEBUG: alle Kammern freigeschaltet.' : 'DEBUG aus.', 1.2); if (!helpOpen) setHelp(true);
     return;
   }
-  setHelp(!helpOpen);
+  setPanel(panel === 'help' ? null : 'help');
 });
+$('optsBtn').addEventListener('click', () => { Snd.init(); setPanel(panel === 'opts' ? null : 'opts'); });
+$('optsClose').addEventListener('click', () => setPanel(null));
 document.body.classList.toggle('debug', debugMode);
 $('helpClose').addEventListener('click', () => setHelp(false));
 function resize() {
@@ -3240,7 +3256,8 @@ window.addEventListener('keydown', e => {
     e.preventDefault();
     if (a === 'jump') pressJump();
     input[a] = true;
-  } else if (e.code === 'KeyH' || e.code === 'Escape') { setHelp(e.code === 'Escape' ? false : !helpOpen); }
+  } else if (e.code === 'KeyH' || e.code === 'Escape') { setPanel(e.code === 'Escape' || panel === 'help' ? null : 'help'); }
+  else if (e.code === 'KeyO') { setPanel(panel === 'opts' ? null : 'opts'); }
   else if (e.code === 'KeyR') { loadLevel(state === 'done' ? 0 : li); }
   else if (e.code === 'KeyQ') fire('blue', aim.x, aim.y);
   else if (e.code === 'KeyE') fire('orange', aim.x, aim.y);
@@ -3334,8 +3351,6 @@ window.addEventListener('pointerdown', e => { if (cine && !(e.target.closest && 
 window.addEventListener('keydown', e => { if (!cine || e.repeat) return; if (e.code === 'Tab') return; cineInput(); e.preventDefault(); e.stopImmediatePropagation(); }, true);
 window.addEventListener('pointerdown', wakeAudio, true);
 window.addEventListener('keydown', wakeAudio, true);
-$('soundBtn').setAttribute('aria-pressed', String(!Snd.muted));
-$('soundBtn').addEventListener('click', () => { Snd.init(); const m = Snd.toggle(); $('soundBtn').setAttribute('aria-pressed', String(!m)); });
 $('grabBtn').addEventListener('pointerdown', e => { e.preventDefault(); Snd.init(); if (aim.mode === 'none') { aim.mode = 'stick'; aim.dx = 1; aim.dy = 0; } syncAim(); gravGrab(player); });
 $('throwBtn').addEventListener('pointerdown', e => { e.preventDefault(); Snd.init(); if (aim.mode === 'none') { aim.mode = 'stick'; aim.dx = 1; aim.dy = 0; } syncAim(); gravThrow(player); });
 canvas.addEventListener('auxclick', e => { if (e.button === 1) { e.preventDefault(); gravGrab(player); } });
@@ -3345,7 +3360,7 @@ $('restart').addEventListener('click', () => { loadLevel(state === 'done' ? 0 : 
 function applyLang() {
   document.documentElement.lang = LANG;
   const aria = (sel, key) => { const el = document.querySelector(sel); if (el) el.setAttribute('aria-label', tr(key)); };
-  aria('#helpBtn', 'aHelp'); aria('#soundBtn', 'aSound'); aria('#restart', 'aRestart'); aria('#game', 'aCanvas'); aria('#dots', 'aDots');
+  aria('#helpBtn', 'aHelp'); aria('#optsBtn', 'aOpts'); aria('#restart', 'aRestart'); aria('#game', 'aCanvas'); aria('#dots', 'aDots');
   aria('.ctrl .fb', 'blue'); aria('.ctrl .fo', 'orange'); aria('.ctrl .jb', 'jump'); aria('#echoBtn', 'echo'); aria('#grabBtn', 'grab'); aria('#throwBtn', 'throw');
   aria('#moveStick', 'move'); aria('#aimStick', 'aim');
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = tr(el.dataset.t); });
