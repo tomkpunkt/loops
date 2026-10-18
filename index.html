@@ -2514,11 +2514,11 @@ function drawLaserTiles() {
   }
 }
 // A scanning laser: sweeps up and down in front of the eye; once something is spotted it snaps onto it.
-function scanHit(t, ox, oy, dx, dy) {
+function scanHit(t, ox, oy, dx, dy, noActors) {
   const wall = castRay(ox, oy, dx, dy); let best = wall ? Math.hypot(wall.x - ox, wall.y - oy) : 600;
   for (const b of bodies) {
     if (b === t || b.kind === 'turret' && !b.alive) continue;
-    if ((b.kind === 'player' || b.kind === 'echo') && t.lockWho !== b) continue; // only drawn onto what it actually sees
+    if ((b.kind === 'player' || b.kind === 'echo') && (noActors || t.lockWho !== b)) continue; // only drawn onto what it actually sees; the cone ignores figures
     // ray vs box (slab test)
     const x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, y0 = b.y - b.h / 2, y1 = b.y + b.h / 2;
     let tmin = 0, tmax = best;
@@ -2530,6 +2530,42 @@ function scanHit(t, ox, oy, dx, dy) {
     if (tmin <= tmax && tmin > 2 && tmin < best) best = tmin;
   }
   return { x: ox + dx * best, y: oy + dy * best, hitWall: !!wall };
+}
+function scanBounds(t, e0) {
+  const dist = Math.max(48, ...t.segs.map(r => r[0] ? Math.abs(r[0].x2 - e0.x) : 0));
+  return { dist, top: Math.atan2(TURRET_RAYS[TURRET_RAYS.length - 1], dist), bot: Math.atan2(3, dist) };
+}
+// The view cone is the fan the scan laser sweeps, cut off by whatever blocks it, with drifting scan lines and the odd glowing speck of dust.
+function drawScanCone(t, e0) {
+  const sb = scanBounds(t, e0), N = 16, pts = [];
+  for (let i = 0; i <= N; i++) { const a = sb.bot + (sb.top - sb.bot) * i / N; pts.push(scanHit(t, e0.x, e0.y, Math.cos(a) * t.face, Math.sin(a), true)); }
+  ctx.save(); ctx.globalCompositeOperation = 'source-over';
+  ctx.beginPath(); ctx.moveTo(e0.x, e0.y); for (const p of pts) ctx.lineTo(p.x, p.y); ctx.closePath();
+  ctx.globalAlpha = 0.1; ctx.fillStyle = '#ff3a2a'; ctx.fill();
+  ctx.clip();
+  // scan lines: arcs running outward from the eye
+  const maxR = Math.max(...pts.map(p => Math.hypot(p.x - e0.x, p.y - e0.y)));
+  ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 1;
+  for (let i = 0; i < 12; i++) {
+    const r = ((time * 55 + i * 18) % (12 * 18));
+    if (r > maxR) continue;
+    ctx.globalAlpha = 0.10 * (1 - r / maxR * 0.6);
+    ctx.beginPath(); ctx.arc(e0.x, e0.y, r, t.face > 0 ? sb.top - 0.05 : Math.PI - sb.bot - 0.05, t.face > 0 ? sb.bot + 0.05 : Math.PI - sb.top + 0.05); ctx.stroke();
+  }
+  // fine horizontal raster for texture
+  ctx.globalAlpha = 0.05;
+  for (let y = Math.floor((e0.y - 60) / 3) * 3; y < e0.y + 10; y += 3) { ctx.fillStyle = '#ff7060'; ctx.fillRect(Math.min(e0.x, e0.x + t.face * maxR), y, maxR, 1); }
+  // glowing specks: dust or a small insect drifting through the beam
+  for (let j = 0; j < 3; j++) {
+    const per = 1.6 + j * 0.7, ph = (time + j * 0.53 + t.x * 0.01) / per, cyc = Math.floor(ph), u = ph - cyc;
+    const h1 = hash2(cyc, j, Math.floor(t.x)), h2 = hash2(cyc + 7, j + 3, Math.floor(t.y));
+    const ai = Math.min(N, Math.floor(h2 * N)), p = pts[ai], rr = 20 + h1 * Math.max(0, Math.hypot(p.x - e0.x, p.y - e0.y) - 26);
+    const a = sb.bot + (sb.top - sb.bot) * ai / N, x = e0.x + Math.cos(a) * t.face * rr + Math.sin(u * 6) * 3, y = e0.y + Math.sin(a) * rr - u * 6;
+    const al = Math.sin(u * Math.PI);
+    ctx.globalAlpha = 0.9 * al; ctx.fillStyle = '#ffd0b0'; ctx.fillRect(x - 0.8, y - 0.8, 1.6, 1.6);
+    glowDot(x, y, 5, 'rgba(255,120,90,0.6)', al);
+  }
+  ctx.restore(); ctx.globalAlpha = 1;
 }
 function drawTurretBeams() {
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
@@ -2545,8 +2581,7 @@ function drawTurretBeams() {
       // sweeping: upward arc over the sight band, eased at both ends
       const ph = 0.5 + 0.5 * Math.sin(time * 2.6 + t.x * 0.05);
       // sweep the end point across the actual sight band (eye height up to the top sight line)
-      const dist = Math.max(48, ...t.segs.map(r => r[0] ? Math.abs(r[0].x2 - e0.x) : 0));
-      const target = Math.atan2(TURRET_RAYS[TURRET_RAYS.length - 1] * ph + 3 * (1 - ph), dist);
+      const sb = scanBounds(t, e0), target = sb.top * ph + sb.bot * (1 - ph);
       t.scanA = t.scanA === undefined ? target : t.scanA + (target - t.scanA) * 0.25;
       const dx = Math.cos(t.scanA) * t.face, dy = Math.sin(t.scanA), h = scanHit(t, e0.x, e0.y, dx, dy);
       pts.push([e0.x, e0.y, h.x, h.y]);
@@ -2554,16 +2589,7 @@ function drawTurretBeams() {
       if (t.segs[0] && t.segs[0].length > 1) for (const sg of t.segs[0].slice(1)) pts.push([sg.x1, sg.y1, sg.x2, sg.y2, true]);
     }
     const pulse = k > 0 ? 0.7 + 0.3 * Math.sin(time * (18 + k * 40)) : 1;
-    // view cone: eye to the ends of the sight lines (follows what blocks them)
-    {
-      const ends = t.segs.map((r, i) => r[0] ? { x: r[0].x2, y: r[0].y2, from: (t.rayFrom && t.rayFrom[i]) || e0 } : null);
-      if (ends[0] && ends[ends.length - 1]) {
-        ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.1; ctx.fillStyle = '#ff3a2a';
-        ctx.beginPath(); ctx.moveTo(e0.x, e0.y);
-        for (const en of ends) if (en) ctx.lineTo(en.x, en.y);
-        const top = ends[ends.length - 1]; ctx.lineTo(top.from.x, top.from.y); ctx.closePath(); ctx.fill(); ctx.restore();
-      }
-    }
+    drawScanCone(t, e0);
     const scanDim = t.lockWho ? 1 : 0.5;  // the idle scan is softer than a lock
     for (const [x1, y1, x2, y2, faint] of pts) {
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
