@@ -1,4 +1,9 @@
 <title>Loops</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1217">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -16,16 +21,17 @@ body{
   background:var(--bg); color:var(--fg); font-family:var(--mono); font-size:14px; overflow-x:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:8px; -webkit-tap-highlight-color:transparent;
+  padding-top:max(8px,env(safe-area-inset-top,0px)); padding-bottom:max(8px,env(safe-area-inset-bottom,0px));
+  -webkit-tap-highlight-color:transparent; -webkit-text-size-adjust:100%; touch-action:manipulation;
 }
-.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:8px;min-height:calc(100dvh - max(8px,env(safe-area-inset-top,0px)) - max(8px,env(safe-area-inset-bottom,0px)))}
 .hud{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:34px}
 .hud .chamber{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand{display:flex;flex-direction:column;gap:2px;min-width:0}
 .brand h1{margin:0;font-family:var(--display);font-weight:700;font-size:1.3rem;letter-spacing:.06em;text-transform:uppercase;line-height:1}
 .brand h1 span{color:var(--blue)} .brand h1 span+span{color:var(--orange)}
 .brand .sub{color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
-.right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.right{display:flex;align-items:center;gap:8px;flex:none}
 .dots{display:flex;gap:6px}
 .dots button,.btn{
   font:500 .8rem var(--mono);color:var(--fg);background:var(--panel);border:1px solid var(--line);
@@ -56,7 +62,7 @@ canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:none;cur
 .keys{color:var(--muted);font-size:.78rem;line-height:1.8;margin:0}
 kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;background:var(--panel)}
 .ctrl{display:none;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;padding-block:2px 18px}
-.stick{--sz:clamp(100px,30vw,136px);width:var(--sz);height:var(--sz);border-radius:50%;position:relative;touch-action:none;
+.stick{--sz:clamp(92px,27vw,150px);width:var(--sz);height:var(--sz);border-radius:50%;position:relative;touch-action:none;
   background:radial-gradient(circle at 50% 50%,#1b242d 0 38%,#151c23 39% 100%);border:1px solid var(--line);box-shadow:inset 0 0 0 6px #121920}
 .stick::before{content:"";position:absolute;inset:18%;border-radius:50%;border:1px dashed #2c3946}
 .stick .knob{position:absolute;left:50%;top:50%;width:44%;height:44%;transform:translate(-50%,-50%);border-radius:50%;
@@ -86,8 +92,21 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
 .dots{flex-wrap:wrap}
 .padnote{color:var(--muted);font-size:.78rem;margin:0}
 @media (hover:none) and (pointer:coarse){
-  .ctrl{display:grid} .taphint{display:block} .keys{display:none} canvas{cursor:default}
+  .ctrl{display:grid;margin-top:auto} .taphint{display:block}
+  .mid{max-width:240px}
+  .ctrl{gap:10px} .keys{display:none} canvas{cursor:default}
   .brand .sub{display:none}
+}
+/* phone in landscape: sticks left and right of the chamber */
+@media (hover:none) and (pointer:coarse) and (orientation:landscape) and (max-height:560px){
+  .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-rows:auto 1fr auto;column-gap:14px;row-gap:6px;max-width:none;min-height:calc(100dvh - 16px)}
+  .hud{grid-column:1 / -1;grid-row:1}
+  .stage{grid-column:2;grid-row:2 / 4;align-self:start}
+  .ctrl{display:contents}
+  #moveStick{grid-column:1;grid-row:3;justify-self:center;align-self:end;margin-bottom:22px}
+  #aimStick{grid-column:3;grid-row:3;justify-self:center;align-self:end;margin-bottom:22px}
+  .mid{grid-column:3;grid-row:2;align-self:center;justify-self:center;width:min(220px,100%)}
+  .stick{--sz:clamp(96px,32vh,140px)}
 }
 </style>
 
@@ -2601,7 +2620,10 @@ function updateHud() {
 // ---------- sizing ----------
 const stage = document.querySelector('.stage'), wrap = document.querySelector('.wrap');
 function layout() {
-  const others = wrap.offsetHeight - stage.offsetHeight;
+  // height of everything except the stage (hud, controls, gaps); the wrap itself may be taller (min-height)
+  const kids = Array.from(wrap.children).filter(c => c !== stage && c.offsetParent !== null);
+  const gap = parseFloat(getComputedStyle(wrap).rowGap) || 0;
+  const others = kids.reduce((h, c) => h + c.offsetHeight, 0) + gap * kids.length;
   const cs = getComputedStyle(document.body);
   const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(getComputedStyle(document.documentElement).paddingTop || 0) + parseFloat(getComputedStyle(document.documentElement).paddingBottom || 0);
   const availH = Math.max(220, window.innerHeight - others - pad - 4);
