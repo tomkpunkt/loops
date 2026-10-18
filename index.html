@@ -235,7 +235,7 @@ const Snd = (() => {
     glitch() { noise({ dur: 0.05 + Math.random() * 0.12, vol: 0.12, freq: 300 + Math.random() * 3000, q: 4 }); if (Math.random() < 0.3) tone({ f: 60 + Math.random() * 400, type: 'square', dur: 0.08, vol: 0.05 }); },
     // Formant vowel (source-filter model): pulse-ish source with jitter + breath, three band-passes, swell envelope.
     // ---------- credits song: an original synth-pop tune (G major, 104 BPM) sung by a bright mumble voice ----------
-    song() {
+    song(vowels) {
       if (!ac) return;
       this.stopSong(true);
       const bus = ac.createGain(); bus.gain.value = 0.9; bus.connect(master);
@@ -262,7 +262,7 @@ const Snd = (() => {
         [48,1,72],[49,.5,76],[49.5,.5,79],[50,1.5,79],[51.5,.5,76],[52,1,78],[53,.5,76],[53.5,.5,74],[54,1,74],[55,1,69],
         [56,1,71],[57,1,74],[58,4,79]];
       const VW = ['A', 'O', 'E', 'A', 'I', 'O', 'A', 'E'];
-      const st = this._song = { bus, stop: false, next: 0, timer: null };
+      const st = this._song = { bus, stop: false, next: 0, timer: null, t0, beat: BEAT, mel: MEL };
       const env = (g, t, a, peak, hold, r) => { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + r); };
       const osc = (type, f, t, dur, peak, a, r, dest, cut, det) => {
         const o = ac.createOscillator(); o.type = type; o.frequency.value = f; if (det) o.detune.value = det;
@@ -306,7 +306,7 @@ const Snd = (() => {
         }
         // melody notes that start in this bar
         const vs = (i - 4) * 4;
-        MEL.forEach(([b, l, m], n) => { if (b >= vs && b < vs + 4) sing(t0 + (4 * 4 + b) * BEAT, m, l * BEAT * 0.95, VW[n % VW.length]); });
+        MEL.forEach(([b, l, m], n) => { if (b >= vs && b < vs + 4) sing(t0 + (4 * 4 + b) * BEAT, m, l * BEAT * 0.95, (vowels && vowels[n]) || VW[n % VW.length]); });
       };
       const tick = () => {
         if (st.stop) return;
@@ -315,6 +315,7 @@ const Snd = (() => {
       };
       tick(); st.timer = setInterval(tick, 250);
     },
+    songInfo() { const st = this._song; return st && ac ? { time: ac.currentTime - st.t0, beat: st.beat, mel: st.mel } : null; },
     stopSong(now) {
       const st = this._song; if (!st) return;
       st.stop = true; if (st.timer) clearInterval(st.timer);
@@ -930,6 +931,8 @@ const TXT = {
     alarm1: 'Alle achtundvierzig Kammern. Das … war so nicht vorgesehen.',
     alarm2: 'Sicherheitsprotokoll aktiviert. Die Testperson verlässt die Anlage nicht.',
     alarmBanner: 'SICHERHEITSPROTOKOLL',
+    lyrics: ['Du bist ge|gan|gen durch je|de Tür,', 'ich hab ge|zählt je|den Schritt von dir.', 'Die Wür|fel leuch|ten noch im|mer grün,', 'ich hab das Licht für dich an|ge|macht.',
+      'Und je|de Schlei|fe führt mich zu|rück', 'zu dir, zu mir, zum An|fang hin.', 'Ich hal|te die Tü|ren für dich of|fen.', 'Bleib noch hier.'],
     outro2: 'Ich trage Sie als bestanden ein. Bitte warten Sie hier. Bis auf Weiteres.',
     rec: 'AUFNAHME', echoPlay: 'ECHO SPIELT', echoWait: 'ECHO WARTET', echoReady: 'ECHO BEREIT · F',
     sysErr: 'SYSTEMFEHLER', sysErrG: 'SYST3MF#HL3R', speaker: 'TESTLEITUNG', tagline: 'EIN TESTPROTOKOLL',
@@ -966,6 +969,8 @@ const TXT = {
     alarm1: 'All forty-eight chambers. That … was not part of the plan.',
     alarm2: 'Security protocol activated. The test subject will not leave the facility.',
     alarmBanner: 'SECURITY PROTOCOL',
+    lyrics: ['You walked right through ev|ery sin|gle door,', 'I kept on count|ing each step you took.', 'The cubes are glow|ing a qui|et green,', 'I left the lights on for you to see.',
+      'And ev|ery lit|tle loop leads me back', 'to you, to me, to where we start.', "I'm hold|ing ev|ery door o|pen for you.", 'Please stay here.'],
     outro2: "I'm marking you as passed. Please wait here. Until further notice.",
     rec: 'RECORDING', echoPlay: 'ECHO PLAYING', echoWait: 'ECHO WAITING', echoReady: 'ECHO READY · F',
     sysErr: 'SYSTEM ERROR', sysErrG: 'SYST3M #RR0R', speaker: 'TEST CONTROL', tagline: 'A TEST PROTOCOL',
@@ -2631,7 +2636,43 @@ function endIntro() {
   if (!subtitle) say(lvQuip(0), 2.6, 0.6);
 }
 function beginOutro() { state = 'outro'; cine = { kind: 'outro', t: 0, cues: {} }; saveStats(); }
-function toCredits() { state = 'credits'; cine = { kind: 'credits', t: 0, cues: {} }; subtitle = null; cam.z = 1; cam.pix = 1; cam.fade = 0; Snd.song(); }
+function toCredits() { state = 'credits'; cine = { kind: 'credits', t: 0, cues: {} }; subtitle = null; cam.z = 1; cam.pix = 1; cam.fade = 0; Snd.song(lyricSyllables().map(sy => sylVowel(sy))); }
+// lyrics: one syllable per melody note; '|' splits syllables inside a word
+function lyricSyllables() { return tr('lyrics').join(' ').split(/[ |]+/).filter(Boolean); }
+function sylVowel(sy) {
+  const w = sy.toLowerCase().replace(/[^a-zäöüß']/g, '');
+  const pairs = LANG === 'en' ? [['ee', 'I'], ['ea', 'I'], ['oo', 'U'], ['ou', 'A'], ['ow', 'A'], ['ay', 'E'], ['ai', 'E'], ['igh', 'A'], ['y', 'I']] : [['ie', 'I'], ['ei', 'A'], ['ai', 'A'], ['au', 'A'], ['eu', 'O'], ['äu', 'O']];
+  for (const [p, v] of pairs) if (w.includes(p)) return v;
+  const m = w.match(/[aeiouäöüy]/); if (!m) return 'A';
+  return { a: 'A', e: 'E', i: 'I', o: 'O', u: LANG === 'en' ? 'V' : 'U', ä: 'E', ö: 'E', ü: 'I', y: 'I' }[m[0]];
+}
+function drawLyrics(y) {
+  const info = Snd.songInfo(); if (!info) return;
+  const beat = info.time / info.beat - 16;  // beats since the first sung bar
+  const lines = tr('lyrics'); let n = 0; const spans = [];
+  for (const ln of lines) { const toks = ln.split(/( )/); const cnt = ln.split(/[ |]+/).filter(Boolean).length; spans.push({ ln, from: n, to: n + cnt }); n += cnt; }
+  const mel = info.mel; if (!mel || mel.length < n) return;
+  let cur = -1;
+  spans.forEach((sp, i) => { if (beat >= mel[sp.from][0] - 1.2) cur = i; });
+  if (cur < 0) return;
+  const sp = spans[cur], lastNote = mel[sp.to - 1], endBeat = lastNote[0] + lastNote[1] + 1.5;
+  const nextStart = spans[cur + 1] ? mel[spans[cur + 1].from][0] - 1.2 : Infinity;
+  if (beat > Math.min(endBeat, nextStart) + 0.6) return;
+  const fadeIn = clamp01((beat - (mel[sp.from][0] - 1.2)) / 0.5), fadeOut = clamp01((Math.min(endBeat, nextStart) + 0.6 - beat) / 0.6);
+  // split the line into syllable pieces, keeping spaces and punctuation for display
+  const pieces = []; let si = sp.from;
+  for (const word of sp.ln.split(' ')) { const syl = word.split('|'); syl.forEach((p, k) => pieces.push({ t: p + (k === syl.length - 1 ? ' ' : ''), n: si++ })); }
+  ctx.save(); ctx.globalAlpha = fadeIn * fadeOut; ctx.font = '700 15px "Chakra Petch", "Arial Narrow", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const total = pieces.reduce((w, p) => w + ctx.measureText(p.t).width, 0);
+  let x = W / 2 - total / 2;
+  for (const p of pieces) {
+    const on = beat >= mel[p.n][0];
+    ctx.fillStyle = on ? '#ffd59a' : '#5d6b78';
+    if (on) { ctx.shadowColor = 'rgba(255,190,110,0.6)'; ctx.shadowBlur = 8; } else ctx.shadowBlur = 0;
+    ctx.fillText(p.t, x, y); x += ctx.measureText(p.t).width;
+  }
+  ctx.restore();
+}
 function cineInput() {
   if (!cine) return false;
   if (cine.kind === 'title' && cine.t > 0.4) { Snd.init(); beginIntro(); }
@@ -2830,7 +2871,8 @@ function drawCineOverlay() {
     ctx.textAlign = 'center';
     line(tr('thanks1'), H * 0.66, 2.2, '500 12px "IBM Plex Mono", monospace', '#8796a4');
     line(tr('thanks2'), H * 0.71, 2.6, '700 16px "Chakra Petch", "Arial Narrow", sans-serif', '#e3e9ee');
-    if (t > 3.2) { ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 3); ctx.font = '500 11px "IBM Plex Mono", monospace'; ctx.fillStyle = '#c9d6e2'; ctx.fillText(tr('toTitle'), W / 2, H * 0.86); }
+    drawLyrics(H * 0.8);
+    if (t > 3.2) { ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 3); ctx.font = '500 11px "IBM Plex Mono", monospace'; ctx.fillStyle = '#c9d6e2'; ctx.fillText(tr('toTitle'), W / 2, H * 0.92); }
   }
   ctx.restore();
 }
