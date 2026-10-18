@@ -1145,7 +1145,7 @@ function loadLevel(i) {
   state = 'play'; winTimer = 0; introT = 2.4;
   if (typeof camReset === 'function') { cine = null; camReset(); visor = 1; saveStats(); Snd.stopSong(); }
   gunTaken = false;
-  transIn = lastLoaded >= 0 ? 0.45 : 0;
+  transIn = lastLoaded >= 0 ? 0.4 : 0;
   if (typeof say === 'function') say(i === lastLoaded && LEVELS[i] ? pickTxt('RETRY') : lvQuip(i), 2.6, 1.2); lastLoaded = i; idleT = 0;
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const c = grid[y][x];
@@ -3079,14 +3079,14 @@ function render() {
   drawSleepZ();
   drawCrashGhosts();
   ctx.setTransform(k, 0, 0, k, 0, 0);
-  { // chamber change: pixelate out at the end of the win screen, and back in after loading
-    let tp = 1, tf = 0;
-    if (state === 'win' && winTimer < 0.4) { const u = 1 - winTimer / 0.4; tp = lerp(1, 18, u * u); tf = u * 0.85; }
-    if (transIn > 0) { const u = transIn / 0.45; tp = Math.max(tp, lerp(1, 18, u * u)); tf = Math.max(tf, u * 0.85); }
-    const px = Math.max(cam.pix, qpix(tp));
-    if (px > 1) pixelate(px);
+  if (cam.pix > 1) pixelate(cam.pix);
+  { // chamber change: a short, soft fade to black and back
+    let tf = 0;
+    if (state === 'win' && winTimer < 0.3) tf = easeIO(1 - winTimer / 0.3);
+    if (transIn > 0) tf = Math.max(tf, easeIO(transIn / 0.4));
     if (tf > 0) { ctx.fillStyle = `rgba(5,8,11,${tf})`; ctx.fillRect(0, 0, W, H); }
   }
+
   drawVignette();
   if (flicker > 0) { const on = Math.sin(flicker * 60) > 0.3 ? 0 : 0.07; ctx.fillStyle = `rgba(0,0,0,${on})`; ctx.fillRect(0, 0, W, H); }
   drawAim();
