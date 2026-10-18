@@ -52,6 +52,12 @@ canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:none;cur
 .help h3{margin:4px 0 0;font:500 .7rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .langs{display:flex;gap:8px;flex-wrap:wrap}
 .settings{display:grid;gap:8px;max-width:340px}
+.dbgtable{font:500 .72rem var(--mono);color:var(--muted);max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.dbgtable table{border-collapse:collapse;width:100%}
+.dbgtable td,.dbgtable th{padding:3px 8px;text-align:right;white-space:nowrap}
+.dbgtable th{color:var(--fg);position:sticky;top:0;background:var(--panel)}
+.dbgtable td:first-child,.dbgtable th:first-child{text-align:left;max-width:9.5em;overflow:hidden;text-overflow:ellipsis}
+.dbgtable td,.dbgtable th{padding:3px 6px}
 .settings label{display:grid;grid-template-columns:7.5em 1fr;align-items:center;gap:10px;font-size:.78rem;color:var(--fg)}
 .settings label.chk{grid-template-columns:auto 1fr}
 .settings input[type=range]{width:100%;accent-color:var(--blue);min-height:28px}
@@ -135,6 +141,11 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
         <p class="hint" id="hint"></p>
         <h3 data-t="hChambers">Kammern</h3>
         <div class="dots" id="dots" aria-label="Kammer wählen"></div>
+        <div id="dbgStats" hidden>
+          <h3>Testdaten</h3>
+          <div class="dbgtable" id="dbgTable"></div>
+          <div class="langs"><button class="btn" type="button" id="dbgCopy">Kopieren</button><button class="btn" type="button" id="dbgReset">Zurücksetzen</button></div>
+        </div>
         <h3 data-t="hControls">Steuerung</h3>
         <p class="keys"><kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo (ab 17) · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen (ab 33)</p>
         <p class="taphint">Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Ab Kammer 17 gibt es die Echo-Taste, ab Kammer 33 Greifen und Werfen.</p>
@@ -844,7 +855,7 @@ const LEVELS = [
   { name: 'Ballistik', grav: true, portals: false,
     hint: 'Der Schalter liegt oben, hinter dem Loch in der Decke. Wirf schräg nach oben durch das Loch.',
     quip: 'Physik-Unterricht, praktischer Teil. Theorie gab es nie.',
-    map: ['################','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#...........BBB#','#########...####','#...........####','#...........D..#','#...........D..#','#.C...P.....D.E#','################'] },
+    map: ['################','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','########....BBB#','#...........####','#...........D..#','#...........D..#','#.C...P.....D.E#','################'] },
   { name: 'Rohrpost', grav: true,
     hint: 'Das Portal hoch an der linken Wand erreichst du nicht, ein geworfener Würfel schon. Sein Partner gehört an die Decke der Zelle hinter dem Gitter.',
     quip: 'Sendung unterwegs. Empfänger: ein Schalter. Kein Rückschein.',
@@ -860,7 +871,7 @@ const LEVELS = [
   { name: 'Zuspiel', echo: true, grav: true, portals: false,
     hint: 'Das türkise Tor ist nur ein Tunnel am Boden. Von hier aus kommt kein Wurf auf das Regal. Dein Echo hält das Tor offen, du trägst den Würfel hindurch und wirfst von drinnen.',
     quip: 'Pass und Torschuss. Leider ohne Publikum.',
-    map: ['################','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#....BB.#','#......#...#####','#......#...D...#','#......#...D...#','#......d...D...#','#bb.PC.d...D.E.#','################'] },
+    map: ['################','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#.......#','#......#....BBB#','#......#....####','#......#....D..#','#......d....D..#','#bb.PC.d....D.E#','################'] },
   { name: 'Wachwechsel', echo: true, grav: true, portals: false,
     hint: 'Die gelbe Tür braucht jemanden auf dem gelben Schalter. Trag den Würfel über die Säure zum türkisen Schalter, der den Ausgang öffnet.',
     quip: 'Schichtwechsel. Die eine Hälfte von Ihnen hat jetzt Feierabend.',
@@ -876,7 +887,7 @@ const LEVELS = [
   { name: 'Doppelhalter', echo: true, grav: true, portals: false,
     hint: 'Ein Schalter liegt in der Grube, aus der niemand mehr herauskommt. Der andere liegt oben auf dem Regal. Du hast einen Würfel und ein Echo.',
     quip: 'Einer sitzt in der Grube, einer wirft. Sie kennen das Prinzip.',
-    map: ['################','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#..............#','#.......BBB.####','#.......###.D..#','#...........D..#','#....P.C....D.E#','#.##############','#..#############','#BB#############','################'] },
+    map: ['################','#..............#','#..............#','#..........#...#','#..........#...#','#..........#...#','#..........#...#','#..........#...#','#.......BBB#####','#.......###.D..#','#...........D..#','#....P.C....D.E#','#.##############','#..#############','#BB#############','################'] },
   { name: 'Doppelwurf', grav: true,
     hint: 'Zwei Würfel, zwei Schalter: Einer gehört oben auf die Decke, wirf ihn durch das Loch. Der andere muss in die Zelle hinter dem Gitter, über ein Portal unter der Decke und eins an der Zellendecke.',
     quip: 'Doppelte Würfel, doppelte Freude. Die Freude ist optional.',
@@ -909,7 +920,7 @@ const LEVELS = [
   { name: 'Umzug', grav: true, portals: false,
     hint: 'Ein Turret, den du trägst, schaut in deine Zielrichtung. Stell ihn unten so ab, dass er seinen Kollegen sieht. Zwei Turrets, die sich sehen, schießen sich gegenseitig ab.',
     quip: 'Turrets kennen keine Kollegialität. Wir auch nicht.',
-    map: ['################','################','################','################','################','#..............#','#..............#','#..............#','#..............#','#..............#','#........Y..P..#','#........#######','#ET......#######','################','################','################'] },
+    map: ['################','################','################','################','################','#..............#','#..............#','#..............#','#..............#','#..............#','########.Y..P..#','#........#######','#ET......#######','################','################','################'] },
   { name: 'Querschläger',
     hint: 'Zwei Turrets, zwei Etagen, zwei weiße Wände. Verbinde die Wände so, dass jeder Turret den anderen sieht. Danach ist der untere Gang frei.',
     quip: 'Bitte stellen Sie die beiden einander vor. Es wird kurz.',
@@ -917,7 +928,7 @@ const LEVELS = [
   { name: 'Entsorgung', grav: true, portals: false,
     hint: 'Von oben sieht er dich nicht. Greif ihn durch das Loch im Boden und wirf ihn weg. Ein geworfener Turret schaltet sich ab.',
     quip: 'Turrets sind Eigentum der Anlage. Bitte gehen Sie sorgfältig damit um. Oder auch nicht.',
-    map: ['################','################','################','################','#..............#','#..............#','#..............#','#..............#','#..............#','#............P.#','#........##..###','#..............#','#E........Y....#','################','################','################'] },
+    map: ['################','################','################','################','#..............#','#..............#','#..............#','#..............#','#..............#','#............P.#','###########..###','#..............#','#E........Y....#','################','################','################'] },
   { name: 'Lockvogel', echo: true, portals: false,
     hint: 'Auf dem Sims erfasst dich der obere Strahl. Stellt sich dein Echo auf den Sockel, verdeckt es den Strahl. Nimm auf, wie du auf den Sockel springst, und beende die Aufnahme schnell.',
     quip: 'Ihr Echo steht Modell. Der Turret ist begeistert.',
@@ -1102,7 +1113,7 @@ let gunColor = 'blue', lastColor = 'blue';
 const input = { left: false, right: false, jump: false, axis: 0, padAxis: 0 };
 const held = { btn: false, stick: false, pad: false };
 const jumpHeld = () => input.jump || held.btn || held.stick || held.pad;
-function pressJump() { if (!jumpHeld()) player.jumpBuf = 0.12; }
+function pressJump() { if (!jumpHeld()) player.jumpBuf = 0.15; }
 let unlocked = 1, debugMode = false;
 try { debugMode = localStorage.getItem('loops-debug') === '1'; } catch (e) {}
 try { unlocked = Math.max(1, Math.min(LEVELS.length, parseInt(localStorage.getItem('portalschleife-unlocked') || '1', 10) || 1)); } catch (e) {}
@@ -1113,7 +1124,7 @@ function makeBody(kind, x, y) {
   return { kind, x, y, w: s.w, h: s.h, vx: 0, vy: 0, onGround: false, vang: 0, sx: x, sy: y, coyote: 0, jumpBuf: 0 };
 }
 let lastLoaded = -1, idleT = 0, gunTaken = false, transIn = 0;
-function loadLevel(i) {
+function loadLevel(i, quiet) {
   li = i;
   grid = LEVELS[i].map.map(r => r.split(''));
   ROWS = grid.length; COLS = grid[0].length; W = COLS * T; H = ROWS * T;
@@ -1146,7 +1157,8 @@ function loadLevel(i) {
   if (typeof camReset === 'function') { cine = null; camReset(); visor = 1; saveStats(); Snd.stopSong(); }
   gunTaken = false;
   transIn = lastLoaded >= 0 ? 0.4 : 0;
-  if (typeof say === 'function') say(i === lastLoaded && LEVELS[i] ? pickTxt('RETRY') : lvQuip(i), 2.6, 1.2); lastLoaded = i; idleT = 0;
+  if (typeof say === 'function') if (!quiet && i === lastLoaded && state === 'play' && typeof lvStat === 'function') lvStat(i).r++;
+  say(i === lastLoaded && LEVELS[i] ? pickTxt('RETRY') : lvQuip(i), 2.6, 1.2); lastLoaded = i; idleT = 0;
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const c = grid[y][x];
     if (c === 'P') { player = makeBody('player', x * T + T / 2, (y + 1) * T - 14); grid[y][x] = '.'; }
@@ -1203,12 +1215,24 @@ function moveX(b, dx, pushed) {
   if (!dx) return;
   b.x += dx;
   const y0 = Math.floor((b.y - b.h / 2) / T), y1 = Math.floor((b.y + b.h / 2 - 0.01) / T);
+  const actor = b.kind === 'player' || b.kind === 'echo';
+  // ledge assist: an airborne figure whose feet just miss the top of a ledge is lifted onto it
+  const ledge = cx => {
+    if (!actor || b.onGround || !b.fromJump || b.vy < -60 || b.portalT > 0) return false;
+    const bottom = b.y + b.h / 2, cyB = Math.floor((bottom - 0.01) / T), top = cyB * T;
+    if (bottom - top > 4) return false;
+    for (let cy = y0; cy < cyB; cy++) if (solidFor(b, cx, cy)) return false;
+    if (!solidFor(b, cx, cyB)) return false;
+    const x0b = Math.floor((b.x - b.w / 2) / T), x1b = Math.floor((b.x + b.w / 2 - 0.01) / T);
+    for (let xx = x0b; xx <= x1b; xx++) for (let cy = Math.floor((top - b.h) / T); cy < cyB; cy++) if (solidFor(b, xx, cy)) return false;
+    b.y = top - b.h / 2 - 0.01; b.vy = Math.min(b.vy, 0); return true;
+  };
   if (dx > 0) {
     const cx = Math.floor((b.x + b.w / 2 - 0.01) / T);
-    for (let cy = y0; cy <= y1; cy++) if (solidFor(b, cx, cy)) { b.x = cx * T - b.w / 2; b.vx = Math.min(b.vx, 0); break; }
+    if (!ledge(cx)) for (let cy = y0; cy <= y1; cy++) if (solidFor(b, cx, cy)) { b.x = cx * T - b.w / 2; b.vx = Math.min(b.vx, 0); break; }
   } else {
     const cx = Math.floor((b.x - b.w / 2) / T);
-    for (let cy = y0; cy <= y1; cy++) if (solidFor(b, cx, cy)) { b.x = (cx + 1) * T + b.w / 2; b.vx = Math.max(b.vx, 0); break; }
+    if (!ledge(cx)) for (let cy = y0; cy <= y1; cy++) if (solidFor(b, cx, cy)) { b.x = (cx + 1) * T + b.w / 2; b.vx = Math.max(b.vx, 0); break; }
   }
   for (const o of bodies) {
     if (o === b || ghostPair(b, o) || !overlap(b, o)) continue;
@@ -1243,7 +1267,18 @@ function moveY(b, dy) {
     }
   } else {
     const cy = Math.floor((b.y - b.h / 2) / T);
-    for (let cx = x0; cx <= x1; cx++) if (solidFor(b, cx, cy)) { b.y = (cy + 1) * T + b.h / 2; b.vy = Math.max(b.vy, 0); break; }
+    const hits = []; for (let cx = x0; cx <= x1; cx++) if (solidFor(b, cx, cy)) hits.push(cx);
+    if (hits.length) {
+      // corner correction: brushing a ceiling edge by a few pixels slides the figure past it
+      let fixed = false;
+      if ((b.kind === 'player' || b.kind === 'echo') && hits.length === 1) {
+        const c = hits[0], left = b.x - b.w / 2, right = b.x + b.w / 2;
+        const overR = right - c * T, overL = (c + 1) * T - left;
+        if (c === x1 && overR <= 7 && !solidFor(b, c - 1, cy)) { b.x -= overR + 0.01; fixed = true; }
+        else if (c === x0 && overL <= 7 && !solidFor(b, c + 1, cy)) { b.x += overL + 0.01; fixed = true; }
+      }
+      if (!fixed) { b.y = (cy + 1) * T + b.h / 2; b.vy = Math.max(b.vy, 0); }
+    }
   }
   for (const o of bodies) {
     if (o === b || !overlap(b, o)) continue;
@@ -1558,7 +1593,8 @@ const approach = (v, t, d) => v < t ? Math.min(v + d, t) : Math.max(v - d, t);
 
 const ECHO_MAX = 10;
 function controlActor(a, dir, holdJump, dt) {
-  a.coyote = a.onGround ? 0.09 : a.coyote - dt;
+  a.coyote = a.onGround ? 0.12 : a.coyote - dt;
+  if (a.onGround && a.vy >= 0) a.fromJump = false;
   a.jumpBuf -= dt;
   a.portalT = Math.max(0, (a.portalT || 0) - dt);
   if (a.onGround) {
@@ -1573,7 +1609,7 @@ function controlActor(a, dir, holdJump, dt) {
   }
   let jumped = false;
   if (a.jumpBuf > 0 && a.coyote > 0) {
-    a.vy = -JUMP; a.jumpBuf = 0; a.coyote = 0; a.jumpCut = true; jumped = true;
+    a.vy = -JUMP; a.jumpBuf = 0; a.coyote = 0; a.jumpCut = true; jumped = true; a.fromJump = true;
     puff(a.x, a.y + a.h / 2, 6, 14, 30); if (a === player) Snd.jump();
   }
   if (a.vy >= 0) a.jumpCut = false;
@@ -1682,7 +1718,7 @@ function die() {
   burst(player.x, player.y, '#b8ff6a', 22);
   player.x = player.sx; player.y = player.sy; player.vx = player.vy = 0; player.vang = 0;
   deathFlash = 0.35; trail = [];
-  stats.deaths++; saveStats(); shake(4, 0.2);
+  stats.deaths++; lvStat(li).d++; saveStats(); shake(4, 0.2);
   Snd.die(); say(pickTxt('DEATH'), 1.8);
 }
 
@@ -1690,7 +1726,7 @@ function step(dt) {
   time += dt;
   updateCine(dt);
   if (state === 'play') {
-    stats.time += dt;
+    stats.time += dt; lvStat(li).t += dt;
     const busy = Math.abs(player.vx) > 15 || Math.abs(player.vy) > 30 || recording || subtitle;
     idleT = busy ? Math.min(idleT, 0) : idleT + dt;
     if (idleT > 28) { say(pickTxt('IDLE'), 2.2); idleT = -45; }
@@ -1711,7 +1747,7 @@ function step(dt) {
   if (echo && state === 'play') {
     const fr = echo.frames[echo.i++];
     if (fr) {
-      if (fr.j) echo.jumpBuf = 0.12;
+      if (fr.j) echo.jumpBuf = 0.15;
       if (fr.a) { echo.aimDx = fr.a[0]; echo.aimDy = fr.a[1]; }
       for (const f of fr.f) { echo.aimDx = f.dx; echo.aimDy = f.dy; fire(f.c, f.tx, f.ty, echo); }
       for (const g of (fr.g || [])) { echo.aimDx = g.dx; echo.aimDy = g.dy; if (g.k === 'g') gravGrab(echo); else gravThrow(echo); }
@@ -1797,7 +1833,7 @@ function step(dt) {
   if (state === 'play') {
     for (let cy = 0; cy < ROWS; cy++) for (let cx = 0; cx < COLS; cx++) if (grid[cy][cx] === 'E' || grid[cy][cx] === 'K') {
       if (p.x + p.w / 2 > cx * T + 6 && p.x - p.w / 2 < (cx + 1) * T - 6 && p.y + p.h / 2 > (cy - 1) * T && p.y - p.h / 2 < (cy + 1) * T) {
-        state = 'win'; winTimer = 2.8; burst(p.x, p.y, '#7be08a', 26); Snd.win();
+        state = 'win'; winTimer = 2.8; burst(p.x, p.y, '#7be08a', 26); Snd.win(); lvStat(li).w++; saveStats();
         if (li === LEVELS.length - 1) { beginOutro(); renderDots(); break; }
         if (li === 47 && LEVELS[48]) { if (unlocked < 49) { unlocked = 49; try { localStorage.setItem('portalschleife-unlocked', '49'); } catch (e) {} } state = 'alarm'; cine = { kind: 'alarm', t: 0, cues: {} }; subtitle = null; renderDots(); break; }
         if (grid[cy][cx] === 'K') { gunTaken = true; state = 'gunget'; cine = { kind: 'gun', t: 0, cues: {} }; subtitle = null; }
@@ -2787,6 +2823,7 @@ const cam = { x: 0, y: 0, z: 1, pix: 1, bars: 0, fade: 0 };
 let cine = null;      // { kind: 'title' | 'intro' | 'outro' | 'credits', t, cues:{} }
 let visor = 1;        // player's visor light, 0 = asleep
 const stats = (() => { let s = {}; try { s = JSON.parse(localStorage.getItem('portalschleife-stats')) || {}; } catch (e) {} for (const n of ['deaths', 'portals', 'echoes', 'time']) s[n] = +s[n] || 0; return s; })();
+const lvStat = i => { stats.levels = stats.levels || {}; return stats.levels[i] = stats.levels[i] || { d: 0, r: 0, t: 0, w: 0 }; };
 function saveStats() { try { localStorage.setItem('portalschleife-stats', JSON.stringify(stats)); } catch (e) {} }
 const easeIO = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -2798,7 +2835,7 @@ function camReset() { cam.x = W / 2; cam.y = H / 2; cam.z = 1; cam.pix = 1; cam.
 const once = (key, fn) => { if (!cine.cues[key]) { cine.cues[key] = 1; fn(); } };
 
 function startTitle() {
-  loadLevel(0);
+  loadLevel(0, true);
   subtitle = null; introT = 0; visor = 0;
   state = 'title'; cine = { kind: 'title', t: 0, cues: {} };
 }
@@ -3184,10 +3221,23 @@ window.addEventListener('resize', layout);
 let helpOpen = false, panel = null;
 function setPanel(name) {
   panel = name; helpOpen = !!name;
+  if (name === 'help') renderDbgStats();
   $('help').hidden = name !== 'help'; $('opts').hidden = name !== 'opts';
   $('helpBtn').setAttribute('aria-expanded', String(name === 'help')); $('optsBtn').setAttribute('aria-expanded', String(name === 'opts'));
   input.left = input.right = input.jump = false; input.axis = 0;
   if (!name) canvas.focus();
+}
+function renderDbgStats() {
+  const box = $('dbgStats'); if (!box) return;
+  box.hidden = !debugMode; if (!debugMode) return;
+  const L = stats.levels || {}, rows = Object.keys(L).map(Number).sort((a, b) => a - b);
+  const fmt = sec => { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
+  $('dbgTable').innerHTML = rows.length ? '<table><tr><th>#</th><th>Tode</th><th>Neu</th><th>Zeit</th><th>OK</th></tr>' +
+    rows.map(i => `<tr><td>${String(i + 1).padStart(2, '0')} ${LEVELS[i] ? lvName(i) : ''}</td><td>${L[i].d}</td><td>${L[i].r}</td><td>${fmt(L[i].t)}</td><td>${L[i].w}</td></tr>`).join('') + '</table>' : '<p style="margin:8px">Noch keine Daten.</p>';
+}
+function dbgStatsText() {
+  const L = stats.levels || {};
+  return 'Loops Testdaten\n#\tName\tTode\tNeustarts\tSekunden\tGeschafft\n' + Object.keys(L).map(Number).sort((a, b) => a - b).map(i => `${i + 1}\t${LEVELS[i] ? LEVELS[i].name : ''}\t${L[i].d}\t${L[i].r}\t${Math.round(L[i].t)}\t${L[i].w}`).join('\n');
 }
 function setHelp(on) {
   if (on) return setPanel('help');
@@ -3202,7 +3252,7 @@ $('helpBtn').addEventListener('click', () => {
   if (helpTaps.length >= 5) {
     helpTaps = []; debugMode = !debugMode;
     try { localStorage.setItem('loops-debug', debugMode ? '1' : '0'); } catch (e) {}
-    document.body.classList.toggle('debug', debugMode); renderDots();
+    document.body.classList.toggle('debug', debugMode); renderDots(); renderDbgStats();
     say(debugMode ? 'DEBUG: alle Kammern freigeschaltet.' : 'DEBUG aus.', 1.2); if (!helpOpen) setHelp(true);
     return;
   }
@@ -3210,6 +3260,12 @@ $('helpBtn').addEventListener('click', () => {
 });
 $('optsBtn').addEventListener('click', () => { Snd.init(); setPanel(panel === 'opts' ? null : 'opts'); });
 $('optsClose').addEventListener('click', () => setPanel(null));
+$('dbgCopy').addEventListener('click', () => {
+  const t = dbgStatsText(), done = () => { $('dbgCopy').textContent = '✓ Kopiert'; setTimeout(() => { $('dbgCopy').textContent = 'Kopieren'; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => { prompt('Testdaten', t); });
+  else prompt('Testdaten', t);
+});
+$('dbgReset').addEventListener('click', () => { if (confirm('Testdaten löschen?')) { stats.levels = {}; saveStats(); renderDbgStats(); } });
 document.body.classList.toggle('debug', debugMode);
 $('helpClose').addEventListener('click', () => setHelp(false));
 function resize() {
