@@ -1459,6 +1459,7 @@ function updateTurrets(dt) {
     const rays = turretRays(t);
     t.segs = rays.map(r => r.segs); t.rayFrom = rays.map(r => r.from || null);
     const hit = rays.find((r, ri) => turretTarget(t, r.who, ri));
+    t.lockWho = hit ? hit.who : null; t.lockSegs = hit ? hit.segs : null;
     if (t.cool > 0) { t.cool -= dt; t.charge = Math.max(0, t.charge - dt * 2); continue; }
     if (state === 'play' && hit) {
       if (t.charge === 0) Snd.tlock();
@@ -2512,31 +2513,63 @@ function drawLaserTiles() {
     ctx.fillStyle = r.on ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.arc(x + T / 2 - 2, y + T / 2 - 2, 1.8, 0, Math.PI * 2); ctx.fill();
   }
 }
+// A scanning laser: sweeps up and down in front of the eye; once something is spotted it snaps onto it.
+function scanHit(t, ox, oy, dx, dy) {
+  const wall = castRay(ox, oy, dx, dy); let best = wall ? Math.hypot(wall.x - ox, wall.y - oy) : 600;
+  for (const b of bodies) {
+    if (b === t || b.kind === 'turret' && !b.alive) continue;
+    // ray vs box (slab test)
+    const x0 = b.x - b.w / 2, x1 = b.x + b.w / 2, y0 = b.y - b.h / 2, y1 = b.y + b.h / 2;
+    let tmin = 0, tmax = best;
+    for (const [o, d, lo, hi] of [[ox, dx, x0, x1], [oy, dy, y0, y1]]) {
+      if (Math.abs(d) < 1e-6) { if (o < lo || o > hi) { tmin = Infinity; break; } continue; }
+      let ta = (lo - o) / d, tb = (hi - o) / d; if (ta > tb) [ta, tb] = [tb, ta];
+      tmin = Math.max(tmin, ta); tmax = Math.min(tmax, tb);
+    }
+    if (tmin <= tmax && tmin > 2 && tmin < best) best = tmin;
+  }
+  return { x: ox + dx * best, y: oy + dy * best, hitWall: !!wall };
+}
 function drawTurretBeams() {
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (const t of bodies) {
     if (t.kind !== 'turret' || !t.alive || !t.segs) continue;
-    const k = Math.min(1, t.charge / TURRET_CHARGE), fl = k > 0 ? (0.75 + 0.25 * Math.sin(time * (20 + k * 30))) : 1;
-    const e0 = turretEye(t), main0 = t.segs[0] && t.segs[0][0];
-    // faint view cone between the eye, the top sight line and the main line
-    const topI = t.segs.length - 1, top0 = t.segs[topI] && t.segs[topI][0], from = t.rayFrom && t.rayFrom[topI];
-    if (main0 && top0 && from) {
-      const reach = t.face > 0 ? Math.min(top0.x2, main0.x2) : Math.max(top0.x2, main0.x2);
-      const g = ctx.createLinearGradient(e0.x, 0, reach, 0); g.addColorStop(0, `rgba(255,70,50,${0.10 + 0.18 * k})`); g.addColorStop(1, 'rgba(255,70,50,0)');
-      ctx.globalAlpha = fl; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(e0.x, e0.y); ctx.lineTo(from.x, from.y); ctx.lineTo(reach, from.y); ctx.lineTo(reach, e0.y); ctx.closePath(); ctx.fill();
+    const k = Math.min(1, t.charge / TURRET_CHARGE), e0 = turretEye(t);
+    const pts = [];
+    if (t.lockWho && t.lockSegs && t.lockSegs.length) {
+      // locked on: follow the sight path, ending on the target
+      t.lockSegs.forEach((sg, i) => { const last = i === t.lockSegs.length - 1; pts.push([i ? sg.x1 : e0.x, i ? sg.y1 : e0.y, last ? t.lockWho.x : sg.x2, last ? t.lockWho.y - 2 : sg.y2]); });
+      t.scanA = Math.atan2(t.lockWho.y - 2 - e0.y, Math.abs(t.lockWho.x - e0.x) || 1);
+    } else {
+      // sweeping: upward arc over the sight band, eased at both ends
+      const ph = 0.5 + 0.5 * Math.sin(time * 2.6 + t.x * 0.05);
+      // sweep the end point across the actual sight band (eye height up to the top sight line)
+      const dist = Math.max(48, ...t.segs.map(r => r[0] ? Math.abs(r[0].x2 - e0.x) : 0));
+      const target = Math.atan2(TURRET_RAYS[TURRET_RAYS.length - 1] * ph + 3 * (1 - ph), dist);
+      t.scanA = t.scanA === undefined ? target : t.scanA + (target - t.scanA) * 0.25;
+      const dx = Math.cos(t.scanA) * t.face, dy = Math.sin(t.scanA), h = scanHit(t, e0.x, e0.y, dx, dy);
+      pts.push([e0.x, e0.y, h.x, h.y]);
+      // through a portal the main sight line continues; show it faintly so the redirect is readable
+      if (t.segs[0] && t.segs[0].length > 1) for (const sg of t.segs[0].slice(1)) pts.push([sg.x1, sg.y1, sg.x2, sg.y2, true]);
     }
-    t.segs.forEach((ray, ri) => {
-      const main = ri === 0;
-      if (!main && t.rayFrom && t.rayFrom[ri]) { const f = t.rayFrom[ri]; ctx.globalAlpha = (0.08 + 0.3 * k) * fl; ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 0.7; ctx.setLineDash([3, 5]); ctx.beginPath(); ctx.moveTo(e0.x, e0.y); ctx.lineTo(f.x, f.y); ctx.stroke(); ctx.setLineDash([]); }
-      for (const sg of ray) {
-        ctx.beginPath(); ctx.moveTo(sg.x1, sg.y1); ctx.lineTo(sg.x2, sg.y2);
-        if (k > 0 && main) { ctx.globalAlpha = 0.25 * k * fl; ctx.strokeStyle = '#ff3b2f'; ctx.lineWidth = 6 + k * 4; ctx.stroke(); }
-        ctx.globalAlpha = (main ? 0.22 + 0.6 * k : 0.08 + 0.3 * k) * fl; ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = main ? 0.8 + k * 1.6 : 0.7 + k * 0.6;
-        if (!main) ctx.setLineDash([3, 5]); ctx.stroke(); ctx.setLineDash([]);
-      }
-      const last = ray[ray.length - 1];
-      if (main && last && last.end !== 'none') glowDot(last.x2, last.y2, 6 + k * 8, 'rgba(255,80,60,0.6)', 0.6 + 0.4 * k);
-    });
+    const pulse = k > 0 ? 0.7 + 0.3 * Math.sin(time * (18 + k * 40)) : 1;
+    for (const [x1, y1, x2, y2, faint] of pts) {
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+      ctx.globalAlpha = (faint ? 0.10 : 0.22 + 0.25 * k) * pulse; ctx.strokeStyle = '#ff2a1a'; ctx.lineWidth = 4 + k * 5; ctx.stroke();
+      ctx.globalAlpha = (faint ? 0.25 : 0.75) * pulse; ctx.strokeStyle = '#ff6a5a'; ctx.lineWidth = 1 + k * 1.2; ctx.stroke();
+      if (!faint) { ctx.globalAlpha = 0.9 * pulse; ctx.strokeStyle = '#ffd9d4'; ctx.lineWidth = 0.6; ctx.stroke(); }
+    }
+    const end = pts[pts.length - 1];
+    if (end) {
+      glowDot(end[2], end[3], 6 + k * 6, 'rgba(255,80,60,0.7)', pulse);
+      if (Math.random() < 0.25 && !end[4]) spark({ x: end[2], y: end[3], vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, drag: 4, size: 1.2, life: 0.18, color: '#ff8a7a' });
+    }
+    // reticle on the target while charging
+    if (t.lockWho && k > 0) {
+      const w = t.lockWho, r = 16 - k * 5, rot = time * 3;
+      ctx.globalAlpha = 0.5 + 0.5 * k; ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = 1.2;
+      for (let q = 0; q < 4; q++) { const a = rot + q * Math.PI / 2; ctx.beginPath(); ctx.arc(w.x, w.y - 2, r, a, a + 0.8); ctx.stroke(); }
+    }
   }
   ctx.restore(); ctx.globalAlpha = 1;
 }
