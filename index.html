@@ -215,6 +215,7 @@ const Snd = (() => {
     button(on) { tone({ f: on ? 520 : 380, f2: on ? 780 : 260, type: 'square', dur: 0.09, vol: 0.06 }); },
     door(open) { noise({ dur: 0.45, vol: 0.1, freq: open ? 400 : 260, f2: open ? 900 : 160, type: 'lowpass' }); tone({ f: open ? 110 : 90, type: 'sawtooth', dur: 0.4, vol: 0.04, attack: 0.05 }); },
     boot() { tone({ f: 90, f2: 420, type: 'sawtooth', dur: 0.7, vol: 0.04 }); tone({ f: 840, type: 'sine', dur: 0.14, vol: 0.06, delay: 0.62 }); },
+    fanfare() { [392, 494, 587, 784].forEach((f, i) => tone({ f, type: 'square', dur: 0.12, vol: 0.045, delay: i * 0.1 })); [784, 988, 1175].forEach(f => tone({ f, type: 'triangle', dur: 1.2, vol: 0.055, delay: 0.44 })); tone({ f: 1568, f2: 1760, type: 'sine', dur: 0.7, vol: 0.025, delay: 0.55 }); },
     tick(p) { tone({ f: 160 + p * 26, type: 'square', dur: 0.025, vol: 0.025 }); },
     power() { tone({ f: 660, type: 'sine', dur: 0.15, vol: 0.1 }); tone({ f: 990, type: 'sine', dur: 0.25, vol: 0.09, delay: 0.1 }); },
     die() { noise({ dur: 0.5, vol: 0.16, freq: 2500, f2: 300 }); tone({ f: 300, f2: 60, type: 'sawtooth', dur: 0.4, vol: 0.06 }); },
@@ -934,7 +935,7 @@ function makeBody(kind, x, y) {
   const s = kind === 'player' ? { w: 20, h: 28 } : { w: 24, h: 24 };
   return { kind, x, y, w: s.w, h: s.h, vx: 0, vy: 0, onGround: false, vang: 0, sx: x, sy: y, coyote: 0, jumpBuf: 0 };
 }
-let lastLoaded = -1, idleT = 0;
+let lastLoaded = -1, idleT = 0, gunTaken = false;
 function loadLevel(i) {
   li = i;
   grid = LEVELS[i].map.map(r => r.split(''));
@@ -966,6 +967,7 @@ function loadLevel(i) {
   doorOpen = false; doorT = 0; doorOpen2 = false; doorT2 = 0; pressed = false;
   state = 'play'; winTimer = 0; introT = 2.4;
   if (typeof camReset === 'function') { cine = null; camReset(); visor = 1; saveStats(); }
+  gunTaken = false;
   if (typeof say === 'function') say(i === lastLoaded && LEVELS[i] ? pickTxt('RETRY') : lvQuip(i), 2.6, 1.2); lastLoaded = i; idleT = 0;
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const c = grid[y][x];
@@ -1527,7 +1529,7 @@ function step(dt) {
       if (p.x + p.w / 2 > cx * T + 6 && p.x - p.w / 2 < (cx + 1) * T - 6 && p.y + p.h / 2 > (cy - 1) * T && p.y - p.h / 2 < (cy + 1) * T) {
         state = 'win'; winTimer = 2.8; burst(p.x, p.y, '#7be08a', 26); Snd.win();
         if (li === LEVELS.length - 1) { beginOutro(); renderDots(); break; }
-        if (grid[cy][cx] === 'K') { winTimer = 5.2; gotGun = 4.6; Snd.power(); say(tr('gun'), 1.6); }
+        if (grid[cy][cx] === 'K') { gunTaken = true; state = 'gunget'; cine = { kind: 'gun', t: 0, cues: {} }; subtitle = null; }
         else say(li + 1 < LEVELS.length ? pickTxt('WIN') : tr('lastWin'), 4);
         if (li + 2 > unlocked) { unlocked = Math.min(LEVELS.length, li + 2); try { localStorage.setItem('portalschleife-unlocked', String(unlocked)); } catch (e) {} }
         renderDots();
@@ -1794,16 +1796,8 @@ function drawTiles() {
       plate(ctx, x + 3, y + T - 8, T - 6, 8, METAL);
       ctx.fillStyle = '#1b2229'; ctx.fillRect(x + 10, y + T - 13, T - 20, 5);
       ctx.fillStyle = hexA('#ffb347', 0.5 + 0.5 * pul); ctx.fillRect(x + 8, y + T - 3, T - 16, 1);
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(x + T / 2, y + T - 12, 16, `rgba(255,179,71,${0.35 * pul})`, 1); glowDot(x + T / 2 + 12, y + 6 + bob, 14, `rgba(255,179,71,${0.5 * pul})`, 1); ctx.restore(); ctx.globalAlpha = 1;
-      ctx.save(); ctx.translate(x + T / 2, y + 6 + bob);
-      ctx.fillStyle = '#2b333d'; ctx.fillRect(-6, 4, 5, 6);                // grip
-      ctx.fillStyle = '#4a5765'; rr(-12, -5, 20, 10, 3); ctx.fill();        // body
-      ctx.fillStyle = '#6c7a89'; ctx.fillRect(-11, -4, 18, 2);
-      ctx.fillStyle = '#1b2229'; ctx.fillRect(-8, -1, 10, 3);
-      ctx.fillStyle = '#ffb347'; for (let i = 0; i < 3; i++) ctx.fillRect(-7 + i * 3.4, -0.5, 2, 2);
-      ctx.fillStyle = '#39434e'; ctx.fillRect(8, -6, 6, 3); ctx.fillRect(8, 3, 6, 3);  // prongs
-      ctx.fillStyle = '#ffd59a'; ctx.beginPath(); ctx.arc(11, 0, 2.6, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowDot(x + T / 2, y + T - 12, 16, `rgba(255,179,71,${0.35 * pul})`, 1); if (!gunTaken) glowDot(x + T / 2 + 12, y + 6 + bob, 14, `rgba(255,179,71,${0.5 * pul})`, 1); ctx.restore(); ctx.globalAlpha = 1;
+      if (!gunTaken) { ctx.save(); ctx.translate(x + T / 2, y + 6 + bob); drawGunSprite(); ctx.restore(); }
     } else if (c === 'E') {
       const top = (cy - 1) * T, pulse = 0.5 + 0.5 * Math.sin(time * 4);
       plate(ctx, x + 1, top + 1, T - 2, T * 2 - 1, METAL);
@@ -1825,6 +1819,15 @@ function drawTiles() {
 
 // Grille: a framed wire-mesh panel. Portal shots pass through, bodies don't.
 // Neighbouring grille cells merge into one panel; the frame is only drawn on outer edges.
+function drawGunSprite() {
+  ctx.fillStyle = '#2b333d'; ctx.fillRect(-6, 4, 5, 6);                // grip
+  ctx.fillStyle = '#4a5765'; rr(-12, -5, 20, 10, 3); ctx.fill();        // body
+  ctx.fillStyle = '#6c7a89'; ctx.fillRect(-11, -4, 18, 2);
+  ctx.fillStyle = '#1b2229'; ctx.fillRect(-8, -1, 10, 3);
+  ctx.fillStyle = '#ffb347'; for (let i = 0; i < 3; i++) ctx.fillRect(-7 + i * 3.4, -0.5, 2, 2);
+  ctx.fillStyle = '#39434e'; ctx.fillRect(8, -6, 6, 3); ctx.fillRect(8, 3, 6, 3);  // prongs
+  ctx.fillStyle = '#ffd59a'; ctx.beginPath(); ctx.arc(11, 0, 2.6, 0, Math.PI * 2); ctx.fill();
+}
 function drawGrille(cx, cy, x, y) {
   const up = charAt(cx, cy - 1) === 'G', dn = charAt(cx, cy + 1) === 'G', lf = charAt(cx - 1, cy) === 'G', rt = charAt(cx + 1, cy) === 'G';
   // faint energy haze behind the mesh, slowly drifting
@@ -1955,7 +1958,8 @@ function drawBodyShape(b) {
     ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(-2.5, -2.5, 1.6, 1.6);
   } else {
     const isEcho = b.kind === 'echo';
-    const posed = !isEcho && cine && cine.kind !== 'credits';  // relaxed pose in cutscenes: gun lowered, facing right
+    const posed = !isEcho && ((cine && cine.kind !== 'credits') || state === 'crash');  // relaxed pose in cutscenes: gun lowered, facing right
+    const holdUp = !isEcho && cine && cine.kind === 'gun' && cine.t > 0.6;              // item-get pose
     const ax = isEcho ? b.aimDx : posed ? 1 : aim.x - b.x, ay = isEcho ? b.aimDy : posed ? 0.9 : aim.y - b.y;
     const face = ax >= 0 ? 1 : -1;
     if (isEcho) { ctx.globalAlpha = 0.55 + 0.1 * Math.sin(time * 8); ctx.shadowColor = '#b48cff'; ctx.shadowBlur = 12; }
@@ -1977,11 +1981,17 @@ function drawBodyShape(b) {
     ctx.fillStyle = '#16202a'; rr(face > 0 ? -1 : -6, -11.5, 7, 5, 1.5); ctx.fill();
     if (isEcho || visor > 0.5) { ctx.fillStyle = COL[lastColor]; ctx.fillRect(face > 0 ? 3.5 : -5.5, -10.5, 2, 2); }
     ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(face > 0 ? 0 : -5, -10.5, 1.2, 3);
+    if (holdUp) { // both arms up, new gun raised over the head
+      ctx.fillStyle = outl; rr(-12.8, -21.8, 5.6, 16.6, 2.6); ctx.fill(); rr(7.2, -21.8, 5.6, 16.6, 2.6); ctx.fill();
+      ctx.fillStyle = suit; rr(-12, -21, 4, 15, 2); ctx.fill(); rr(8, -21, 4, 15, 2); ctx.fill();
+      ctx.save(); ctx.translate(-1, -27); drawGunSprite(); ctx.restore();
+    } else {
     // device
     ctx.save(); ctx.translate(0, -1); ctx.rotate(Math.atan2(ay, ax) - b.vang);
     ctx.fillStyle = '#4a5765'; rr(0, -3, 14, 6, 2); ctx.fill();
     ctx.fillStyle = (LEVELS[li].grav && (LEVELS[li].portals === false || b.held)) ? '#ffb347' : COL[lastColor]; ctx.fillRect(12, -2, 3, 4);
     ctx.restore();
+    }
     if (isEcho) { // hologram scanlines
       ctx.save(); ctx.shadowBlur = 0; ctx.beginPath(); ctx.rect(-9, -6, 18, 14); ctx.rect(-7, -14, 14, 10); ctx.rect(-7, 6, 5, 8); ctx.rect(2, 6, 5, 8); ctx.clip();
       ctx.globalAlpha = 0.35; ctx.fillStyle = '#3a1c78';
@@ -2318,15 +2328,17 @@ function drawEchoHud() {
   ctx.restore();
 }
 function drawCrash() {
-  const k2 = canvas.width / W;
-  for (let i = 0; i < 9; i++) {
+  const k2 = canvas.width / W, ct = 6.2 - crashT;
+  const strips = ct < 1.3 ? 0 : ct < 3.6 ? 3 : 9;
+  for (let i = 0; i < strips; i++) {
     const y = Math.random() * H, h = 4 + Math.random() * 30, dx = (Math.random() - 0.5) * 60;
     try { ctx.drawImage(canvas, 0, y * k2, canvas.width, h * k2, dx, y, W, h); } catch (e) {}
   }
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < 4; i++) { ctx.fillStyle = ['rgba(255,0,60,0.12)', 'rgba(0,200,255,0.12)', 'rgba(180,140,255,0.15)'][i % 3]; ctx.fillRect(0, Math.random() * H, W, 2 + Math.random() * 10); }
+  for (let i = 0; i < (ct < 1.3 ? 0 : 4); i++) { ctx.fillStyle = ['rgba(255,0,60,0.12)', 'rgba(0,200,255,0.12)', 'rgba(180,140,255,0.15)'][i % 3]; ctx.fillRect(0, Math.random() * H, W, 2 + Math.random() * 10); }
   ctx.restore();
   if (crashT < 1.2) { ctx.fillStyle = `rgba(0,0,0,${1 - crashT / 1.2})`; ctx.fillRect(0, 0, W, H); }
+  if (ct < 3.8) return;
   ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = Math.random() < 0.5 ? '#ff4d4d' : '#e3e9ee'; ctx.font = '700 26px "Chakra Petch", "Arial Narrow", sans-serif';
   ctx.fillText(Math.random() < 0.85 ? tr('sysErr') : tr('sysErrG'), W / 2 + (Math.random() - 0.5) * 6, H / 2 - 30);
@@ -2381,10 +2393,18 @@ function cineInput() {
   else if (cine.kind === 'intro' && cine.t > 0.4) endIntro();
   else if (cine.kind === 'outro' && cine.t > 1) toCredits();
   else if (cine.kind === 'credits' && cine.t > 1.6) startTitle();
+  else if (cine.kind === 'gun' && cine.t > 1) { cine.t = Math.max(cine.t, 4.4); }
   return true;
 }
 
 function updateCine(dt) {
+  if (state === 'crash') { // zoom onto the player, echoes tear loose, then the picture breaks apart
+    const ct = 6.2 - crashT, hx = player.x, hy = player.y - 9;
+    const a = easeIO(clamp01(ct / 1.3)), u = clamp01((ct - 3.6) / 1.5);
+    cam.x = lerp(W / 2, hx, a); cam.y = lerp(H / 2, hy, a); cam.z = lerp(1, 3.2, a) + u * 2.5; cam.pix = qpix(lerp(1, 16, u * u));
+    cam.bars = Math.min(1, ct / 0.6);
+    return;
+  }
   if (!cine) return;
   const c = cine; c.t += dt; const t = c.t;
   const hx = player.x, hy = player.y - 9;            // the visor
@@ -2418,6 +2438,14 @@ function updateCine(dt) {
     if (t > 10.4) toCredits();
   } else if (c.kind === 'credits') {
     cam.bars = 0; cam.fade = 0;
+  } else if (c.kind === 'gun') {
+    const inA = easeIO(clamp01(t / 0.8)), outA = easeIO(clamp01((t - 4.4) / 0.7));
+    const a = t < 4.4 ? inA : 1 - outA;
+    camOn(lerp(W / 2, hx, a), lerp(H / 2, hy - 8, a), lerp(1, 3, a), 1);
+    cam.bars = a;
+    if (t > 0.62) once('fan', () => { Snd.fanfare(); burst(player.x - 1, player.y - 27, '#ffd59a', 30); flashes.push({ x: player.x, y: player.y - 27, color: '#ffd59a', life: 1 }); });
+    if (t > 0.9) once('ban', () => { gotGun = 4.6; say(tr('gun'), 1.6); });
+    if (t > 5.2) { cine = null; camReset(); state = 'win'; winTimer = 0.9; }
   }
 }
 
@@ -2438,6 +2466,34 @@ function camTransform() {
   const z = cam.z, hw = W / (2 * z), hh = H / (2 * z);
   const cx = Math.max(hw, Math.min(W - hw, cam.x)), cy = Math.max(hh, Math.min(H - hh, cam.y));
   ctx.setTransform(k * z, 0, 0, k * z, k * (W / 2 - cx * z), k * (H / 2 - cy * z));
+}
+function drawGunRays() {
+  if (!cine || cine.kind !== 'gun' || cine.t < 0.6) return;
+  const t = cine.t, a = Math.min(1, (t - 0.6) / 0.3) * (t > 4.4 ? Math.max(0, 1 - (t - 4.4) / 0.5) : 1);
+  const gx = player.x - 1, gy = player.y - 27;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  glowDot(gx, gy, 30, `rgba(255,213,154,${0.45 * a})`, 1);
+  ctx.globalAlpha = a; ctx.translate(gx, gy); ctx.rotate(t * 0.6);
+  for (let i = 0; i < 12; i++) {
+    const r = i % 2 ? 22 : 34, w = 0.11;
+    ctx.fillStyle = i % 2 ? 'rgba(255,230,180,0.18)' : 'rgba(255,200,120,0.26)';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(i * Math.PI / 6 - w) * r, Math.sin(i * Math.PI / 6 - w) * r); ctx.lineTo(Math.cos(i * Math.PI / 6 + w) * r, Math.sin(i * Math.PI / 6 + w) * r); ctx.fill();
+  }
+  ctx.restore(); ctx.globalAlpha = 1;
+}
+function drawCrashGhosts() {
+  if (state !== 'crash') return;
+  const ct = 6.2 - crashT; if (ct < 1.3) return;
+  const s = clamp01((ct - 1.3) / 2.0), n = 5;
+  for (let i = 0; i < n; i++) {
+    if (ct < 1.3 + i * 0.3) continue;            // they tear loose one after another
+    if (Math.random() < 0.12) continue;          // glitch: drop a frame now and then
+    const ang = i / n * Math.PI * 2 + ct * 0.8, dist = s * (16 + i * 5);
+    const jx = Math.random() < 0.2 ? (Math.random() - 0.5) * 8 : 0;
+    const g = { ...player, kind: 'echo', x: player.x + Math.cos(ang) * dist * 1.5 + jx, y: player.y + Math.sin(ang) * dist * 0.55 - s * 3, aimDx: Math.cos(ang), aimDy: 0.6, vang: (Math.random() < 0.1 ? (Math.random() - 0.5) * 0.6 : 0), held: null };
+    drawBodyShape(g);
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 }
 function drawSleepZ() {
   if (!cine || cine.kind !== 'title') return;
@@ -2491,7 +2547,7 @@ function drawCineOverlay() {
     ctx.globalAlpha = a * (0.55 + 0.45 * Math.sin(t * 3.2));
     ctx.fillStyle = '#e3e9ee'; ctx.font = '700 15px "Chakra Petch", "Arial Narrow", sans-serif';
     ctx.fillText(tr('start'), W / 2, H * 0.78);
-  } else if (cine.kind === 'intro' || cine.kind === 'outro') {
+  } else if (cine.kind === 'intro' || cine.kind === 'outro' || cine.kind === 'gun') {
     ctx.globalAlpha = 0.45; ctx.fillStyle = '#c9d6e2'; ctx.font = '500 10px "IBM Plex Mono", monospace'; ctx.textAlign = 'right';
     if (t > 1) ctx.fillText(tr('skip'), W - 14, H * 0.05);
   } else if (cine.kind === 'credits') {
@@ -2529,6 +2585,7 @@ function render() {
   for (const p of [portals.blue, portals.orange]) if (p) drawPortalBack(p);
   drawTrail();
   drawGravBeams();
+  drawGunRays();
   for (let i = bodies.length - 1; i >= 0; i--) drawBody(bodies[i]);
   for (const p of [portals.blue, portals.orange]) if (p) drawPortalRim(p);
   for (const bm of beams) {
@@ -2539,6 +2596,7 @@ function render() {
   ctx.globalAlpha = 1;
   for (const f of flashes) glowFlash(f);
   drawSleepZ();
+  drawCrashGhosts();
   ctx.setTransform(k, 0, 0, k, 0, 0);
   if (cam.pix > 1) pixelate(cam.pix);
   drawVignette();
@@ -2550,10 +2608,11 @@ function render() {
   if (gotGun > 0) {
     const a = Math.min(1, gotGun / 0.5, (4.6 - gotGun) / 0.4);
     ctx.save(); ctx.globalAlpha = Math.max(0, a);
-    ctx.fillStyle = 'rgba(8,12,16,0.8)'; ctx.fillRect(0, H / 2 - 50, W, 100);
+    const by = cine && cine.kind === 'gun' ? H * 0.24 : H / 2;
+    ctx.fillStyle = 'rgba(8,12,16,0.8)'; ctx.fillRect(0, by - 44, W, 88);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#ffb347'; ctx.font = '700 26px "Chakra Petch", "Arial Narrow", sans-serif'; ctx.fillText(tr('gunTitle'), W / 2, H / 2 - 12);
-    ctx.fillStyle = '#8796a4'; ctx.font = '500 12px "IBM Plex Mono", monospace'; ctx.fillText(tr('gunSub'), W / 2, H / 2 + 18);
+    ctx.fillStyle = '#ffb347'; ctx.font = '700 26px "Chakra Petch", "Arial Narrow", sans-serif'; ctx.fillText(tr('gunTitle'), W / 2, by - 10);
+    ctx.fillStyle = '#8796a4'; ctx.font = '500 12px "IBM Plex Mono", monospace'; ctx.fillText(tr('gunSub'), W / 2, by + 18);
     ctx.restore();
   }
   drawCineOverlay();
@@ -2621,7 +2680,7 @@ function updateHud() {
 const stage = document.querySelector('.stage'), wrap = document.querySelector('.wrap');
 function layout() {
   // height of everything except the stage (hud, controls, gaps); the wrap itself may be taller (min-height)
-  const kids = Array.from(wrap.children).filter(c => c !== stage && c.offsetParent !== null);
+  const kids = Array.from(wrap.children || []).filter(c => c !== stage && c.offsetParent !== null);
   const gap = parseFloat(getComputedStyle(wrap).rowGap) || 0;
   const others = kids.reduce((h, c) => h + c.offsetHeight, 0) + gap * kids.length;
   const cs = getComputedStyle(document.body);
