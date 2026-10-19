@@ -3505,8 +3505,8 @@ function drawCables() {
     const on = c.ch === 1 ? doorOpen : c.ch === 2 ? doorOpen2 : (LEVELS[li].darkExit ? !power : power);
     const col = c.ch === 1 ? '#ffae3a' : c.ch === 2 ? '#3fe0d2' : '#7be08a';
     const path = () => { ctx.beginPath(); c.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
-    ctx.setLineDash([]); ctx.strokeStyle = hexA(col, on ? 0.5 : 0.28); ctx.lineWidth = 2; path(); ctx.stroke();
-    if (on) { ctx.setLineDash([2, 10]); ctx.lineDashOffset = SETTINGS.calm ? 0 : -time * 40; ctx.strokeStyle = hexA(col, 0.95); ctx.lineWidth = 2.6; path(); ctx.stroke(); }
+    ctx.setLineDash([]); ctx.strokeStyle = hexA(col, on ? 0.2 : 0.12); ctx.lineWidth = 1.5; path(); ctx.stroke();
+    if (on) { ctx.setLineDash([2, 12]); ctx.lineDashOffset = SETTINGS.calm ? 0 : -time * 30; ctx.strokeStyle = hexA(col, 0.42); ctx.lineWidth = 1.6; path(); ctx.stroke(); }
   }
   ctx.restore();
 }
