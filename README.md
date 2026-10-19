@@ -30,6 +30,8 @@ Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu.
 - Nahtlose Portale: Körper sind halb hier und halb dort, Schwung bleibt erhalten
 - Laser, Lichtbrücken, Gitter, Säure, Schalter und Türen auf zwei Kanälen
 - Echo, Gravitationskanone und Turrets, später Schlüsselkarten, Stacheln, Starkstrom und Stromausfälle im Dunkeln
+- 100 Kammern in sechs Akten, viele davon mit mehreren Teilrätseln
+- Hinweise in drei Stufen, die erst nach Toden, Zeit oder vielen Versuchen freigegeben werden
 - Prozedural gezeichnete Grafik im Pixel-Industriestil, Partikel und Licht
 - Prozedurale „Mumble“-Sprachausgabe der Testleitung (WebAudio)
 - Titel, Intro und Outro mit Pixel-Zoom
@@ -66,6 +68,8 @@ More abilities and buttons unlock as you play.
 - Seamless portals: bodies are half here and half there, momentum is preserved
 - Lasers, light bridges, grilles, acid, switches and doors on two channels
 - Echo, gravity gun and turrets, later key cards, spikes, live floors and power failures in the dark
+- 100 chambers in six acts, many of them with several puzzles in one
+- Hints in three stages that are only released after deaths, time or many attempts
 - Procedurally drawn industrial pixel-style art, particles and lighting
 - Procedural "mumble" voice for Test Control (WebAudio)
 - Title, intro and outro with pixelated zoom
