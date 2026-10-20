@@ -1057,8 +1057,6 @@ const TXT = {
     alarm1: 'Alle achtundvierzig Kammern. Das … war so nicht vorgesehen.',
     alarm2: 'Sicherheitsprotokoll aktiviert. Die Testperson verlässt die Anlage nicht.',
     alarmBanner: 'SICHERHEITSPROTOKOLL',
-    lyrics: ['Du bist ge|gan|gen durch je|de Tür,', 'ich hab ge|zählt je|den Schritt von dir.', 'Die Wür|fel leuch|ten noch im|mer grün,', 'ich hab das Licht für dich an|ge|macht.',
-      'Und je|de Schlei|fe führt mich zu|rück', 'zu dir, zu mir, zum An|fang hin.', 'Ich hal|te die Tü|ren für dich of|fen.', 'Bleib noch hier.'],
     outro2: 'Ich trage Sie als bestanden ein. Bitte warten Sie hier. Bis auf Weiteres.',
     rec: 'AUFNAHME', echoPlay: 'ECHO SPIELT', echoWait: 'ECHO WARTET', echoReady: 'ECHO BEREIT · F',
     sysErr: 'SYSTEMFEHLER', sysErrG: 'SYST3MF#HL3R', speaker: 'TESTLEITUNG', tagline: 'EIN TESTPROTOKOLL',
@@ -1110,8 +1108,8 @@ const TXT = {
     alarm1: 'All forty-eight chambers. That … was not part of the plan.',
     alarm2: 'Security protocol activated. The test subject will not leave the facility.',
     alarmBanner: 'SECURITY PROTOCOL',
-    lyrics: ['You walked right through ev|ery sin|gle door,', 'I kept on count|ing each step you took.', 'The cubes are glow|ing a qui|et green,', 'I left the lights on for you to see.',
-      'And ev|ery lit|tle loop leads me back', 'to you, to me, to where we start.', "I'm hold|ing ev|ery door o|pen for you.", 'Please stay here.'],
+    lyrics: ['I built you rooms full of spikes and fire,', "you jumped the gaps like you'd nev|er tire.", 'I lit the las|ers and hung the lights,', 'I stayed a|wake through a thou|sand nights.',
+      'Loop af|ter loop, a|round and a|round,', 'all of it leads right back to me.', 'Stay with me here, the tests have just be|gun.', 'Wel|come home.'],
     outro2: "I'm marking you as passed. Please wait here. Until further notice.",
     rec: 'RECORDING', echoPlay: 'ECHO PLAYING', echoWait: 'ECHO WAITING', echoReady: 'ECHO READY · F',
     sysErr: 'SYSTEM ERROR', sysErrG: 'SYST3M #RR0R', speaker: 'TEST CONTROL', tagline: 'A TEST PROTOCOL',
@@ -3445,19 +3443,19 @@ function endIntro() {
 }
 function beginOutro() { state = 'outro'; cine = { kind: 'outro', t: 0, cues: {} }; saveStats(); }
 function toCredits() { state = 'credits'; cine = { kind: 'credits', t: 0, cues: {} }; subtitle = null; cam.z = 1; cam.pix = 1; cam.fade = 0; Snd.song(lyricSyllables().map(sy => sylVowel(sy))); }
-// lyrics: one syllable per melody note; '|' splits syllables inside a word
-function lyricSyllables() { return tr('lyrics').join(' ').split(/[ |]+/).filter(Boolean); }
+// lyrics (English in every language): one syllable per melody note; '|' splits syllables inside a word
+function lyricSyllables() { return TXT.en.lyrics.join(' ').split(/[ |]+/).filter(Boolean); }
 function sylVowel(sy) {
   const w = sy.toLowerCase().replace(/[^a-zäöüß']/g, '');
-  const pairs = LANG === 'en' ? [['ee', 'I'], ['ea', 'I'], ['oo', 'U'], ['ou', 'A'], ['ow', 'A'], ['ay', 'E'], ['ai', 'E'], ['igh', 'A'], ['y', 'I']] : [['ie', 'I'], ['ei', 'A'], ['ai', 'A'], ['au', 'A'], ['eu', 'O'], ['äu', 'O']];
+  const pairs = [['ee', 'I'], ['ea', 'I'], ['oo', 'U'], ['ou', 'A'], ['ow', 'A'], ['ay', 'E'], ['ai', 'E'], ['igh', 'A'], ['ire', 'A'], ['y', 'I']]; // the song is always sung in English
   for (const [p, v] of pairs) if (w.includes(p)) return v;
   const m = w.match(/[aeiouäöüy]/); if (!m) return 'A';
-  return { a: 'A', e: 'E', i: 'I', o: 'O', u: LANG === 'en' ? 'V' : 'U', ä: 'E', ö: 'E', ü: 'I', y: 'I' }[m[0]];
+  return { a: 'A', e: 'E', i: 'I', o: 'O', u: 'V', ä: 'E', ö: 'E', ü: 'I', y: 'I' }[m[0]];
 }
 function drawLyrics(y) {
   const info = Snd.songInfo(); if (!info) return;
   const beat = info.time / info.beat - 16;  // beats since the first sung bar
-  const lines = tr('lyrics'); let n = 0; const spans = [];
+  const lines = TXT.en.lyrics; let n = 0; const spans = [];
   for (const ln of lines) { const toks = ln.split(/( )/); const cnt = ln.split(/[ |]+/).filter(Boolean).length; spans.push({ ln, from: n, to: n + cnt }); n += cnt; }
   const mel = info.mel; if (!mel || mel.length < n) return;
   let cur = -1;
