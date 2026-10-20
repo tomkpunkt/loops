@@ -88,6 +88,8 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
   transition:transform .12s ease-out;pointer-events:none}
 .stick.held .knob{transition:none;background:radial-gradient(circle at 40% 35%,#4a5d70,#2c3a48)}
 .stick .tag{position:absolute;left:0;right:0;bottom:-18px;text-align:center;font:500 .66rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+.stick.jump::after{content:"";position:absolute;inset:4%;border-radius:50%;pointer-events:none;background:conic-gradient(from -45deg,rgba(150,200,240,.2) 0 90deg,transparent 90deg 360deg);-webkit-mask:radial-gradient(circle,transparent 52%,#000 53%);mask:radial-gradient(circle,transparent 52%,#000 53%);transition:background .12s}
+.stick.jump.up::after{background:conic-gradient(from -45deg,rgba(150,210,255,.5) 0 90deg,transparent 90deg 360deg)}
 .stick.aim{box-shadow:inset 0 0 0 6px #121920,0 0 0 1px color-mix(in srgb,var(--blue) 40%,transparent),0 0 0 1px color-mix(in srgb,var(--orange) 40%,transparent)}
 .stick.aim::before{border-color:#3a3f52}
 .mid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:220px;width:100%;justify-self:center}
@@ -167,6 +169,7 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
           <label><span data-t="sMusic">Musik</span><input type="range" min="0" max="1" step="0.05" data-vol="music"></label>
           <label><span data-t="sSfx">Effekte</span><input type="range" min="0" max="1" step="0.05" data-vol="sfx"></label>
           <label><span data-t="sVoice">Stimme</span><input type="range" min="0" max="1" step="0.05" data-vol="voice"></label>
+          <label class="chk"><input type="checkbox" id="jumpChk"><span data-t="sStickJump">Springen per Joystick (nach oben ziehen)</span></label>
           <label class="chk"><input type="checkbox" id="calmChk"><span data-t="sCalm">Bildschirmeffekte reduzieren</span></label>
         </div>
         <h3 data-t="hLang">Sprache</h3>
@@ -202,7 +205,7 @@ const FORMANTS = { A: [730, 1090, 2440], E: [530, 1840, 2480], I: [270, 2290, 30
 // The test supervisor's voice: one config line, as in the paper
 const VOICE = { pitch: 168, tract: 1.12, breath: 0.07, jitter: 0.015, wobbleHz: 0 };
 // ---------- player settings ----------
-const SETTINGS = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem('loops-settings')) || {}; } catch (e) {} return Object.assign({ music: 0.8, sfx: 0.8, voice: 0.8, calm: false }, o); })();
+const SETTINGS = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem('loops-settings')) || {}; } catch (e) {} return Object.assign({ music: 0.8, sfx: 0.8, voice: 0.8, calm: false, stickJump: true }, o); })();
 function saveSettings() { try { localStorage.setItem('loops-settings', JSON.stringify(SETTINGS)); } catch (e) {} }
 // ---------- sound (synthesized, starts after first interaction) ----------
 const Snd = (() => {
@@ -1072,7 +1075,7 @@ const TXT = {
     HINT2: ['Neuer Hinweis verfügbar. Wir haben lange überlegt. Nicht über die Kammer, über Sie.', 'Die Anlage hat Mitleid. Ein Hinweis liegt bereit. Fragezeichen oben rechts.', 'Hinweis freigegeben. Bitte nicht als Kritik verstehen. Es ist Kritik.', 'Ihre Testwerte haben einen Hinweis ausgelöst. Herzlichen Glückwunsch.'],
     HINT3: ['Letzter Hinweis freigegeben. Danach können wir nur noch für Sie beten.', 'Wir haben die Lösung aufgeschrieben. In großen Buchstaben. Fragezeichen oben rechts.', 'Der finale Hinweis ist da. Die Kammer schämt sich ein wenig mit.', 'Komplettlösung bereitgestellt. Die Statistik weint leise.'],
     hHint: 'Hinweis', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
-    hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren',
+    hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     padnote: 'Gamepad: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start neu.',
@@ -1124,7 +1127,7 @@ const TXT = {
     HINT2: ['New hint available. We thought about it for a long time. Not about the chamber, about you.', 'The facility feels pity. A hint is ready. Question mark, top right.', 'Hint released. Please do not take it as criticism. It is criticism.', 'Your test results have triggered a hint. Congratulations.'],
     HINT3: ['Final hint released. After this, we can only pray for you.', 'We have written down the answer. In large letters. Question mark, top right.', 'The final hint is here. The chamber is a little embarrassed too.', 'Full solution provided. The statistics are quietly weeping.'],
     hHint: 'Hint', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
-    hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects',
+    hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     padnote: 'Gamepad: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start restart.',
@@ -4041,9 +4044,15 @@ function makeStick(el, onMove, onEnd) {
 
 makeStick($('moveStick'), (x, y) => {
   input.axis = Math.abs(x) < 0.18 ? 0 : Math.max(-1, Math.min(1, (x - Math.sign(x) * 0.18) / 0.72));
-  if (y < -0.62) { if (!held.stick) { pressJump(); held.stick = true; } }
-  else if (y > -0.4) held.stick = false;
-}, () => { input.axis = 0; held.stick = false; });
+  const ms = $('moveStick');
+  if (!SETTINGS.stickJump) { held.stick = false; return; }
+  if (y < -0.62) { if (!held.stick) { pressJump(); held.stick = true; ms.classList.add('up'); } }
+  else if (y > -0.4) { held.stick = false; ms.classList.remove('up'); }
+}, () => { input.axis = 0; held.stick = false; $('moveStick').classList.remove('up'); });
+function applyStickJump() {
+  $('moveStick').classList.toggle('jump', !!SETTINGS.stickJump);
+  const ht = document.querySelector('.taphint'); if (ht) ht.textContent = tr(SETTINGS.stickJump ? 'taphint' : 'taphintNJ');
+}
 
 makeStick($('aimStick'), (x, y) => {
   const L = Math.hypot(x, y);
@@ -4116,7 +4125,7 @@ function applyLang() {
   aria('#moveStick', 'move'); aria('#aimStick', 'aim');
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = tr(el.dataset.t); });
   document.querySelector('.keys').innerHTML = tr('keys');
-  document.querySelector('.taphint').textContent = tr('taphint');
+  document.querySelector('.taphint').textContent = tr(SETTINGS.stickJump ? 'taphint' : 'taphintNJ');
   $('padnote').textContent = tr('padnote');
   $('helpClose').textContent = tr('resume');
   document.querySelector('#moveStick .tag').textContent = tr('move');
@@ -4135,6 +4144,8 @@ document.querySelectorAll('[data-vol]').forEach(inp => {
   inp.addEventListener('input', () => { SETTINGS[k2] = +inp.value; saveSettings(); Snd.setVol(k2, SETTINGS[k2]); });
   inp.addEventListener('change', () => { if (k2 === 'sfx') Snd.button(true); if (k2 === 'voice') say(tr('speaker') === 'TESTLEITUNG' ? 'So klinge ich.' : 'This is how I sound.', 0.8); });
 });
+$('jumpChk').checked = SETTINGS.stickJump; applyStickJump();
+$('jumpChk').addEventListener('change', e => { SETTINGS.stickJump = e.target.checked; saveSettings(); held.stick = false; applyStickJump(); });
 $('calmChk').checked = SETTINGS.calm;
 $('calmChk').addEventListener('change', e => { SETTINGS.calm = e.target.checked; saveSettings(); if (SETTINGS.calm) { flicker = 0; shakeT = 0; } });
 applyLang();
