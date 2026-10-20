@@ -2110,7 +2110,11 @@ function step(dt) {
     const want = power ? 0 : revealT > 0 ? (revealT > 1.0 ? 0 : SETTINGS.calm ? 0.5 : (Math.random() < 0.3 ? 0.85 : 0.25)) : 1;
     darkA = approach(darkA, want, dt * (power ? 2.2 : revealT > 0 ? 9 : 3));
   }
-  if (power) for (const [zx, zy] of zapCells) if (Math.random() < dt * 0.9) {
+  if (power) for (const [zx, zy] of zapCells) if (Math.random() < dt * 0.8) { // slow drifting charge motes
+    const up = !isSolidChar(charAt(zx, zy - 1));
+    spark({ x: zx * T + 2 + Math.random() * (T - 4), y: up ? zy * T - 2 - Math.random() * 6 : zy * T + T / 2, vx: (Math.random() - 0.5) * 16, vy: -10 - Math.random() * 16, drag: 0.8, size: 1.2 + Math.random(), life: 0.9 + Math.random() * 0.7, color: Math.random() < 0.5 ? '#9fd4ff' : '#5aa8ff' });
+  }
+  if (power) for (const [zx, zy] of zapCells) if (Math.random() < dt * 2.2) {
     const up = !isSolidChar(charAt(zx, zy - 1)), sx = zx * T + 3 + Math.random() * (T - 6);
     spark({ x: sx, y: up ? zy * T - 1 : zy * T + T / 2, vx: (Math.random() - 0.5) * 70, vy: -30 - Math.random() * 50, g: 260, drag: 1.5, size: 1.3, life: 0.3, color: Math.random() < 0.5 ? '#bfe3ff' : '#7fc8ff' });
   }
@@ -2880,6 +2884,8 @@ function drawLights() {
     glowDot(cx, cy, 40, hexA(COL[p.color], 0.25 * pulse), 1);
   }
   for (const [ax, ay] of acidCells) glowDot(ax * T + T / 2, ay * T + 10, 40, 'rgba(140,230,70,0.10)', 1);
+  if (power) for (const [zx, zy] of zapCells) { const up = !isSolidChar(charAt(zx, zy - 1)), fl = 0.13 + 0.05 * Math.sin(time * 17 + zx * 2.1) + (Math.random() < 0.04 ? 0.08 : 0);
+    glowDot(zx * T + T / 2, up ? zy * T + 2 : zy * T + T / 2, 58, `rgba(80,165,255,${fl})`, 1); glowDot(zx * T + T / 2, up ? zy * T + 4 : zy * T + T / 2, 24, `rgba(170,215,255,${fl * 0.9})`, 1); }
   for (const [fx, fy] of fireCells) glowDot(fx * T + T / 2, fy * T + 16, 52, `rgba(255,140,40,${0.16 + 0.05 * Math.sin(time * 11 + fx * 3)})`, 1);
   for (const [ex, ey] of exitCells) glowDot(ex * T + T / 2, ey * T, 56, `rgba(123,224,138,${0.10 + 0.05 * Math.sin(time * 4)})`, 1);
   for (const g of btnGroups) for (let cx = g.x0; cx <= g.x1; cx++)
