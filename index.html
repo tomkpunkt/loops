@@ -1617,6 +1617,7 @@ function traceRay(x, y, dx, dy, skip) {
     // bodies in the way (the source itself is skipped on the first segment only, so a beam can come back around through portals)
     for (const b of bodies) {
       if (b === skip && seg === 0) continue;
+      if (Math.abs(b.x - x) < b.w / 2 && Math.abs(b.y - y) < b.h / 2) { best = 0; who = b; break; } // the ray starts inside something: it sees nothing past it
       if (dx !== 0) {
         if (Math.abs(b.y - y) >= b.h / 2 + slack(b)) continue;
         const face = dx > 0 ? b.x - b.w / 2 : b.x + b.w / 2, dist = (face - x) * dx;
@@ -1658,6 +1659,9 @@ function turretRays(t) {
     if (blocksRay(charAt(Math.floor(sx / T), Math.floor(sy / T)))) return { segs: [], who: null, recv: null, blocked: true };
     // a wall between the eye and the cone start also blocks this line
     for (let k = 1; k <= 4; k++) { const px = e.x + (sx - e.x) * k / 4, py = e.y + (sy - e.y) * k / 4; if (blocksRay(charAt(Math.floor(px / T), Math.floor(py / T)))) return { segs: [], who: null, recv: null, blocked: true }; }
+    // a cube (or anything) pushed right up against the turret sits between the eye and the cone start: it blocks this line too
+    for (let k = 1; k <= 8; k++) { const px = e.x + (sx - e.x) * k / 8, py = e.y + (sy - e.y) * k / 8;
+      for (const b of bodies) if (b !== t && Math.abs(b.x - px) < b.w / 2 && Math.abs(b.y - py) < b.h / 2) return { segs: [{ x1: e.x, y1: e.y, x2: px, y2: py, end: 'body' }], who: b, recv: null }; }
     const r = traceRay(sx, sy, t.face, 0, t); r.from = { x: sx, y: sy }; return r;
   });
 }
