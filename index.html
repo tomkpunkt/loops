@@ -2433,10 +2433,40 @@ function drawLiveFloor(cx, cy, x, y) {
   ctx.restore(); ctx.globalAlpha = 1;
 }
 // Spikes: four steel blades on a base strip; they hang from the ceiling when there is nothing below them.
+function drawBurners() {
+  // the block under a flame cell is the burner: heat-stained housing, vent slots, nozzles poking up into the fire
+  for (const [cx, cy] of fireCells) {
+    const x = cx * T, y = (cy + 1) * T, L = !fireCells.some(([a, b]) => a === cx - 1 && b === cy), R = !fireCells.some(([a, b]) => a === cx + 1 && b === cy);
+    const g = ctx.createLinearGradient(0, y, 0, y + T);
+    g.addColorStop(0, '#3b2a20'); g.addColorStop(0.25, '#2a221e'); g.addColorStop(1, '#171412');
+    ctx.fillStyle = g; ctx.fillRect(x, y, T, T);
+    if (L) { ctx.fillStyle = '#4a3d35'; ctx.fillRect(x, y, 2, T); }
+    if (R) { ctx.fillStyle = '#0e0b0a'; ctx.fillRect(x + T - 2, y, 2, T); }
+    const heat = 0.55 + 0.25 * Math.sin(time * 7 + cx * 2.3) + 0.2 * Math.sin(time * 13 + cx);
+    // hot top lip
+    const hg = ctx.createLinearGradient(0, y, 0, y + 6);
+    hg.addColorStop(0, `rgba(255,170,60,${0.85 * heat})`); hg.addColorStop(1, 'rgba(120,40,10,0)');
+    ctx.fillStyle = '#5a4436'; ctx.fillRect(x, y, T, 3); ctx.fillStyle = hg; ctx.fillRect(x, y, T, 6);
+    // vent slots glowing from inside
+    for (let i = 0; i < 3; i++) {
+      const vy = y + 11 + i * 6;
+      ctx.fillStyle = '#0b0807'; ctx.fillRect(x + 5, vy, T - 10, 3);
+      ctx.fillStyle = `rgba(255,${110 + i * 20},30,${(0.5 - i * 0.12) * heat})`; ctx.fillRect(x + 6, vy + 1, T - 12, 1);
+    }
+    // hazard stripe at the foot
+    for (let i = 0; i < T; i += 8) { ctx.fillStyle = '#d9a52a'; ctx.beginPath(); ctx.moveTo(x + i, y + T); ctx.lineTo(x + i + 4, y + T); ctx.lineTo(x + i + 7, y + T - 3); ctx.lineTo(x + i + 3, y + T - 3); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = '#5a4436'; ctx.fillRect(x + 3, y + T - 9, 2, 2); ctx.fillRect(x + T - 5, y + T - 9, 2, 2);
+    // nozzles
+    for (let k = 0; k < 3; k++) {
+      const nx = x + 6 + k * (T - 12) / 2 - 2;
+      ctx.fillStyle = '#6b5446'; ctx.fillRect(nx, y - 4, 5, 4);
+      ctx.fillStyle = '#2a1d16'; ctx.fillRect(nx + 1, y - 4, 3, 1);
+      ctx.fillStyle = `rgba(255,220,120,${0.7 * heat})`; ctx.fillRect(nx + 1, y - 5, 3, 1);
+    }
+  }
+}
 function drawFlames(cx, cy, x, y) {
   // a burner grate in the floor with tongues of fire licking up out of it
-  ctx.fillStyle = '#1a1512'; ctx.fillRect(x, y + T - 6, T, 6);
-  ctx.fillStyle = '#3a2a1e'; for (let i = 2; i < T; i += 6) ctx.fillRect(x + i, y + T - 6, 3, 2);
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (let k = 0; k < 5; k++) {
     const hs = hash2(cx, cy, 30 + k), fx = x + 3 + (k + 0.5) * (T - 6) / 5, sp = 7 + hs * 5;
@@ -3551,6 +3581,7 @@ function render() {
   drawMotes();
   drawCables();
   drawTiles();
+  drawBurners();
   drawCards();
   drawLaserTiles();
   drawLights();
