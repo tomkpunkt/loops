@@ -42,7 +42,7 @@ body{
 .dots button:disabled{opacity:.35;cursor:not-allowed}
 .btn:hover,.dots button:not(:disabled):hover{border-color:var(--muted)}
 button:focus-visible,canvas:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.stage{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0a0f13;width:100%;max-width:100%;margin-inline:auto}
+.stage{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0a0f13;width:100%;max-width:100%;margin-inline:auto;--amb:59,156,255;--ambA:.16;border-color:rgba(var(--amb),calc(var(--ambA) + .12));box-shadow:0 0 64px -6px rgba(var(--amb),var(--ambA)),0 0 18px -4px rgba(var(--amb),calc(var(--ambA) * .9)),0 0 2px rgba(var(--amb),calc(var(--ambA) * 1.4));transition:box-shadow 1.2s ease,border-color 1.2s ease}
 canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:none;cursor:none}
 .help{position:absolute;inset:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);
   -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);overflow:auto;padding:18px max(16px,4%)}
@@ -275,6 +275,7 @@ const Snd = (() => {
     tfire() { noise({ dur: 0.18, vol: 0.2, freq: 1800, f2: 300 }); tone({ f: 220, f2: 60, type: 'sawtooth', dur: 0.2, vol: 0.09 }); },
     tbuzz() { tone({ f: 90 + Math.random() * 40, f2: 70, type: 'sawtooth', dur: 0.32, vol: 0.035 }); tone({ f: 180 + Math.random() * 60, type: 'square', dur: 0.18, vol: 0.015, delay: 0.05 }); noise({ dur: 0.25, vol: 0.05, freq: 3500, q: 6 }); },
     zap() { noise({ dur: 0.35, vol: 0.18, freq: 4200, q: 3 }); tone({ f: 120, f2: 80, type: 'sawtooth', dur: 0.4, vol: 0.08 }); for (let i = 0; i < 4; i++) tone({ f: 900 + Math.random() * 1600, type: 'square', dur: 0.03, vol: 0.04, delay: i * 0.05 }); },
+    crackle() { noise({ dur: 0.07, vol: 0.05, freq: 3800, q: 4 }); noise({ dur: 0.05, vol: 0.04, freq: 2600, q: 5, delay: 0.06 }); },
     burn() { noise({ dur: 0.5, vol: 0.16, freq: 700, f2: 2400, type: 'bandpass', q: 0.7 }); tone({ f: 180, f2: 70, type: 'sawtooth', dur: 0.35, vol: 0.05 }); },
     spike() { noise({ dur: 0.12, vol: 0.14, freq: 2400, q: 2 }); tone({ f: 420, f2: 120, type: 'triangle', dur: 0.18, vol: 0.08 }); },
     card(all) { tone({ f: 988, type: 'square', dur: 0.06, vol: 0.05 }); tone({ f: 1319, type: 'square', dur: 0.08, vol: 0.05, delay: 0.07 }); if (all) tone({ f: 1760, type: 'triangle', dur: 0.3, vol: 0.06, delay: 0.15 }); },
@@ -1907,7 +1908,7 @@ function zapFx(b) {
 }
 function setPower(on, sw) {
   if (power === on) return;
-  power = on; powerFx = 1;
+  power = on; powerFx = 1; updateFrameGlow();
   Snd.powerSw(on); shake(on ? 2 : 3, 0.2);
   if (sw) burst(sw.x * T + T / 2, sw.y * T + T / 2, on ? '#7be08a' : '#ff6a5a', 12);
   for (const t of bodies) if (t.kind === 'turret') { t.charge = 0; t.lost = 0; }
@@ -2117,6 +2118,16 @@ function step(dt) {
   if (power) for (const [zx, zy] of zapCells) if (Math.random() < dt * 2.2) {
     const up = !isSolidChar(charAt(zx, zy - 1)), sx = zx * T + 3 + Math.random() * (T - 6);
     spark({ x: sx, y: up ? zy * T - 1 : zy * T + T / 2, vx: (Math.random() - 0.5) * 70, vy: -30 - Math.random() * 50, g: 260, drag: 1.5, size: 1.3, life: 0.3, color: Math.random() < 0.5 ? '#bfe3ff' : '#7fc8ff' });
+  }
+  if (hasPower && !power) for (const sw of switches) if (charAt(sw.x, sw.y + 1) !== 'X' && Math.random() < dt * 0.45) {
+    const n = 4 + (Math.random() * 6 | 0), sx = sw.x * T + 8 + Math.random() * 16, sy = sw.y * T + 10 + Math.random() * 12;
+    for (let i = 0; i < n; i++) spark({ x: sx, y: sy, vx: (Math.random() - 0.5) * 140, vy: -40 - Math.random() * 110, g: 520, drag: 0.6, size: 1 + Math.random() * 1.2, life: 0.25 + Math.random() * 0.35, color: Math.random() < 0.5 ? '#ffd59a' : '#ffffff' });
+    if (state === 'play' && Math.random() < 0.6) Snd.crackle();
+  }
+  for (const p of [portals.blue, portals.orange]) if (p && p.open > 0.6 && Math.random() < dt * 14) {
+    const vert = p.n.x !== 0, a = Math.random() * Math.PI * 2, r = T * (0.25 + 0.75 * easeOut(p.open));
+    const ex = p.c.x + (vert ? Math.cos(a) * 6 : Math.cos(a) * r), ey = p.c.y + (vert ? Math.sin(a) * r : Math.sin(a) * 6);
+    spark({ x: ex, y: ey, vx: p.n.x * (20 + Math.random() * 40) + (Math.random() - 0.5) * 30, vy: p.n.y * (20 + Math.random() * 40) + (Math.random() - 0.5) * 30, drag: 2.5, size: 1 + Math.random() * 1.3, life: 0.3 + Math.random() * 0.4, color: Math.random() < 0.3 ? '#ffffff' : COL[p.color] });
   }
   for (const [fx, fy] of fireCells) {
     if (Math.random() < dt * 9) spark({ x: fx * T + 5 + Math.random() * (T - 10), y: fy * T + T - 8, vx: (Math.random() - 0.5) * 30, vy: -70 - Math.random() * 80, g: -30, drag: 1.2, size: 1 + Math.random() * 1.6, life: 0.5 + Math.random() * 0.5, color: Math.random() < 0.6 ? '#ffb347' : '#ff6a2a' });
@@ -2341,8 +2352,11 @@ function drawTiles() {
       if (L) rivet(ctx, x + 2, y + T - 4, false); if (R) rivet(ctx, x + T - 4, y + T - 4, false);
       // pad
       const ph = on ? 2 : 5, py = y + T - 5 - ph;
-      ctx.fillStyle = on ? '#4fae5c' : '#a8362c'; ctx.fillRect(x + (L ? 4 : 0), py, T - (L ? 4 : 0) - (R ? 4 : 0), ph);
-      ctx.fillStyle = on ? '#9ff0aa' : '#ff6a5a'; ctx.fillRect(x + (L ? 4 : 0), py, T - (L ? 4 : 0) - (R ? 4 : 0), 1);
+      const pg = ctx.createLinearGradient(0, py, 0, py + ph + 1);
+      if (on) { pg.addColorStop(0, '#c8ffd0'); pg.addColorStop(0.35, '#5fd06e'); pg.addColorStop(1, '#2a6e35'); }
+      else { const pu = 0.5 + 0.5 * Math.sin(time * 2.4 + cx); pg.addColorStop(0, `rgb(255,${120 + pu * 50},${100 + pu * 30})`); pg.addColorStop(0.4, '#c8402f'); pg.addColorStop(1, '#5a1810'); }
+      ctx.fillStyle = pg; ctx.fillRect(x + (L ? 4 : 0), py, T - (L ? 4 : 0) - (R ? 4 : 0), ph + 1);
+      ctx.fillStyle = on ? 'rgba(220,255,225,0.9)' : 'rgba(255,190,170,0.85)'; ctx.fillRect(x + (L ? 5 : 0), py, T - (L ? 5 : 0) - (R ? 5 : 0), 1);
     } else if (c === '~') {
       const grd = ctx.createLinearGradient(0, y + 6, 0, y + T);
       grd.addColorStop(0, '#9ef04e'); grd.addColorStop(0.35, '#5cbd2a'); grd.addColorStop(1, '#1f4510');
@@ -2534,7 +2548,7 @@ function drawCards() {
   }
 }
 // Darkness without power: only small pools of light around you, your echo, the levers, portals, cards and glowing acid.
-let darkCv = null;
+let darkCv = null, edgeCache = null;
 function drawDark() {
   if (darkA < 0.01) return;
   const S = 0.5, w = Math.ceil(W * S), h = Math.ceil(H * S);
@@ -2554,7 +2568,29 @@ function drawDark() {
   for (const [fx, fy] of fireCells) hole(fx * T + T / 2, fy * T + 14, 40, 0.6);
   for (const b of bodies) if (b.heldBy) hole(b.x, b.y, 30, 0.4);
   if (LEVELS[li].darkExit) for (const [ex, ey] of exitCells) hole(ex * T + T / 2, ey * T, 56, 0.9); // the emergency exit glows in the dark
+  else for (const [ex, ey] of exitCells) hole(ex * T + T / 2, ey * T + T / 2, 26, 0.3);
+  for (const gb of btnGroups) for (let cx = gb.x0; cx <= gb.x1; cx++) hole(cx * T + T / 2, gb.y * T + T - 6, 22, 0.35);
+  for (const r of receivers) for (const [rx, ry] of r.cells) hole(rx * T + T / 2, ry * T + T / 2, 20, 0.25);
   ctx.drawImage(darkCv, 0, 0, W, H);
+  // faint contours of the walls so the room stays readable
+  if (!edgeCache || edgeCache.li !== li || edgeCache.g !== grid) {
+    const segs = [], sol = (cx, cy) => { const c = charAt(cx, cy); return c === '#' || c === 'W' || c === 'G' || c === 'Z'; };
+    for (let cy = 0; cy < ROWS; cy++) for (let cx = 0; cx < COLS; cx++) if (sol(cx, cy)) {
+      if (cy > 0 && !sol(cx, cy - 1)) segs.push([cx * T, cy * T, cx * T + T, cy * T]);
+      if (cy < ROWS - 1 && !sol(cx, cy + 1)) segs.push([cx * T, cy * T + T, cx * T + T, cy * T + T]);
+      if (cx > 0 && !sol(cx - 1, cy)) segs.push([cx * T, cy * T, cx * T, cy * T + T]);
+      if (cx < COLS - 1 && !sol(cx + 1, cy)) segs.push([cx * T + T, cy * T, cx * T + T, cy * T + T]);
+    }
+    edgeCache = { li, g: grid, segs };
+  }
+  ctx.save(); ctx.strokeStyle = `rgba(120,160,200,${0.16 * darkA})`; ctx.lineWidth = 1; ctx.beginPath();
+  for (const [a, b, c2, d2] of edgeCache.segs) { ctx.moveTo(a + 0.5, b + 0.5); ctx.lineTo(c2 + 0.5, d2 + 0.5); }
+  ctx.stroke(); ctx.restore();
+  // a weak suit light: warm, breathing slowly, as if it were recharging
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  glowDot(player.x, player.y - 8, 70, `rgba(255,214,160,${0.06 + 0.025 * Math.sin(time * 1.3)})`, darkA);
+  for (const gb of btnGroups) for (let cx = gb.x0; cx <= gb.x1; cx++) glowDot(cx * T + T / 2, gb.y * T + T - 5, 7, gb.on ? 'rgba(123,224,138,0.7)' : `rgba(255,70,60,${0.35 + 0.35 * (Math.sin(time * 2 + cx) > 0.6)})`, darkA);
+  ctx.restore(); ctx.globalAlpha = 1;
   // the lever's status light reads from anywhere
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const sw of switches) glowDot(sw.x * T + 10, sw.y * T + 7, 12, Math.sin(time * 5) > 0 ? 'rgba(255,90,70,0.6)' : 'rgba(255,90,70,0.2)', darkA);
@@ -2656,9 +2692,10 @@ function drawPortalBack(p) {
 function drawPortalRim(p) {
   ctx.save();
   portalShape(p);
-  const pulse = Math.sin(time * 5 + (p.color === 'blue' ? 0 : 2));
-  ctx.shadowColor = COL[p.color]; ctx.shadowBlur = 16 + pulse * 6;
-  ctx.strokeStyle = COL[p.color]; ctx.lineWidth = 3.5; ctx.stroke(); ctx.stroke();
+  const pulse = Math.sin(time * 5 + (p.color === 'blue' ? 0 : 2)), flick = SETTINGS.calm ? 0 : (Math.sin(time * 37 + p.c.x) * 0.5 + Math.sin(time * 23 + p.c.y) * 0.5) * 0.5 + (Math.random() < 0.03 ? 0.6 : 0);
+  ctx.shadowColor = COL[p.color]; ctx.shadowBlur = 16 + pulse * 6 + flick * 8;
+  ctx.globalAlpha = 0.88 + 0.12 * Math.max(-1, Math.min(1, flick));
+  ctx.strokeStyle = COL[p.color]; ctx.lineWidth = 3.5 + flick * 0.8; ctx.stroke(); ctx.stroke(); ctx.globalAlpha = 1;
   ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1; ctx.stroke();
   // swirling energy band inside the rim
   ctx.save(); portalShape(p); ctx.clip();
@@ -2680,6 +2717,26 @@ function clipFront(p) {
   ctx.clip();
 }
 
+// where a body passes through an opening: a dark band right at the plane and a wash of portal light just in front of it
+function seamShade(p, bx, by, bw, bh) {
+  const vert = p.n.x !== 0, r = T * (0.25 + 0.75 * easeOut(p.open)) + 2;
+  const gx0 = p.c.x, gy0 = p.c.y, gx1 = p.c.x + p.n.x * 16, gy1 = p.c.y + p.n.y * 16;
+  ctx.save(); portalLens(p); ctx.clip(); ctx.beginPath(); ctx.rect(bx - bw / 2 - 2, by - bh / 2 - 2, bw + 4, bh + 4); ctx.clip();
+  const g = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+  g.addColorStop(0, 'rgba(2,4,8,0.75)'); g.addColorStop(0.35, 'rgba(2,4,8,0.28)'); g.addColorStop(1, 'rgba(2,4,8,0)');
+  ctx.fillStyle = g; ctx.fillRect(p.c.x - (vert ? 2 : r) - 16, p.c.y - (vert ? r : 2) - 16, (vert ? 4 : 2 * r) + 32, (vert ? 2 * r : 4) + 32);
+  ctx.globalCompositeOperation = 'lighter';
+  const g2 = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+  g2.addColorStop(0, hexA(COL[p.color], 0.0)); g2.addColorStop(0.25, hexA(COL[p.color], 0.35)); g2.addColorStop(1, hexA(COL[p.color], 0));
+  ctx.fillStyle = g2; ctx.fillRect(p.c.x - (vert ? 2 : r) - 16, p.c.y - (vert ? r : 2) - 16, (vert ? 4 : 2 * r) + 32, (vert ? 2 * r : 4) + 32);
+  ctx.restore();
+}
+function portalLens(p) { // the strip in front of the opening, as wide as the opening
+  const vert = p.n.x !== 0, r = T * (0.25 + 0.75 * easeOut(p.open)) + 2;
+  ctx.beginPath();
+  if (vert) ctx.rect(p.n.x > 0 ? p.c.x : p.c.x - 16, p.c.y - r, 16, 2 * r);
+  else ctx.rect(p.c.x - r, p.n.y > 0 ? p.c.y : p.c.y - 16, 2 * r, 16);
+}
 function drawBodyShape(b) {
   ctx.save();
   ctx.translate(b.x, b.y); ctx.rotate(b.vang);
@@ -2805,10 +2862,12 @@ function drawBody(b) {
       const d = depth(b, p);
       if (Math.abs(tanCoord(b, p)) + halfTan(b, p) <= T + 4 && d < 22 && d > -T) {
         const q = partner(p), ang = portalAngle(p, q);
-        ctx.save(); clipFront(p); drawBodyShape(b); ctx.restore();
+        ctx.save(); clipFront(p); drawBodyShape(b); seamShade(p, b.x, b.y, b.w, b.h); ctx.restore();
         ctx.save(); clipFront(q);
         ctx.translate(q.c.x, q.c.y); ctx.rotate(ang); ctx.translate(-p.c.x, -p.c.y);
         drawBodyShape(b); ctx.restore();
+        { const ca = Math.cos(ang), sa = Math.sin(ang), rx = b.x - p.c.x, ry = b.y - p.c.y, side = Math.abs(sa) > 0.5;
+          ctx.save(); clipFront(q); seamShade(q, q.c.x + rx * ca - ry * sa, q.c.y + rx * sa + ry * ca, side ? b.h : b.w, side ? b.w : b.h); ctx.restore(); }
         return;
       }
     }
@@ -2889,8 +2948,17 @@ function drawLights() {
   for (const [fx, fy] of fireCells) glowDot(fx * T + T / 2, fy * T + 16, 52, `rgba(255,140,40,${0.16 + 0.05 * Math.sin(time * 11 + fx * 3)})`, 1);
   for (const [ex, ey] of exitCells) glowDot(ex * T + T / 2, ey * T, 56, `rgba(123,224,138,${0.10 + 0.05 * Math.sin(time * 4)})`, 1);
   for (const g of btnGroups) for (let cx = g.x0; cx <= g.x1; cx++)
-    glowDot(cx * T + T / 2, g.y * T + T - 6, 26, g.on ? 'rgba(123,224,138,0.22)' : 'rgba(224,86,74,0.18)', 1);
+    { glowDot(cx * T + T / 2, g.y * T + T - 6, 30, g.on ? 'rgba(123,224,138,0.30)' : `rgba(240,90,74,${0.2 + 0.06 * Math.sin(time * 2.4 + cx)})`, 1); glowDot(cx * T + T / 2, g.y * T + T - 7, 12, g.on ? 'rgba(190,255,200,0.35)' : 'rgba(255,150,130,0.25)', 1); }
   if (player && Math.hypot(player.vx, player.vy) > 430) glowDot(player.x, player.y, 34, 'rgba(200,225,255,0.12)', 1);
+  // every interactive thing carries a little light of its own
+  for (const sw of switches) if (charAt(sw.x, sw.y + 1) !== 'X') glowDot(sw.x * T + 10, sw.y * T + 7, 16, power ? 'rgba(123,224,138,0.35)' : `rgba(255,90,70,${0.18 + 0.2 * (Math.sin(time * 5) > 0)})`, 1);
+  for (const e of emitters) if (power || !hasPower) glowDot(e.x * T + T / 2 + e.d[0] * 12, e.y * T + T / 2 + e.d[1] * 12, 22, 'rgba(255,70,60,0.28)', 1);
+  for (const r of receivers) for (const [rx, ry] of r.cells) glowDot(rx * T + T / 2, ry * T + T / 2, 22, r.on ? 'rgba(123,224,138,0.30)' : 'rgba(123,224,138,0.07)', 1);
+  if (power || !hasPower) for (const pj of projectors) glowDot(pj.x * T + T / 2 + pj.d * 12, pj.y * T + T / 2, 24, 'rgba(110,190,255,0.25)', 1);
+  for (const b of bodies) {
+    if (b.kind === 'cube') glowDot(b.x, b.y, 16, 'rgba(160,210,255,0.16)', 1);
+    else if (b.kind === 'turret' && b.alive && (power || !hasPower)) glowDot(b.x + (b.face || 1) * 6, b.y - 8, 14, 'rgba(255,60,50,0.35)', 1);
+  }
   ctx.restore();
 }
 function drawTrail() {
@@ -3718,7 +3786,21 @@ function renderHints() {
   });
   if (hs[1] && st < 3) { const p = document.createElement('p'); p.className = 'hint locked'; p.textContent = tr(st === 1 ? 'hLocked2' : 'hLocked3'); box.appendChild(p); }
 }
+// the frame around the chamber picks up the light of its main danger
+function updateFrameGlow() {
+  const st = document.querySelector('.stage'); if (!st || !grid || !st.style || !st.style.setProperty) return;
+  const has = c => grid.some(r => r.includes(c));
+  let rgb = '59,156,255', a = 0.2;
+  if (fireCells.length) { rgb = '255,140,42'; a = 0.34; }
+  else if (zapCells.length) { rgb = '90,168,255'; a = power ? 0.34 : 0.12; }
+  else if (acidCells.length) { rgb = '140,230,70'; a = 0.28; }
+  else if (emitters.length || bodies.some(b => b.kind === 'turret')) { rgb = '255,77,77'; a = 0.26; }
+  else if (has('S')) { rgb = '201,214,226'; a = 0.2; }
+  if (hasPower && !power) a *= 0.45;
+  st.style.setProperty('--amb', rgb); st.style.setProperty('--ambA', a.toFixed(3));
+}
 function updateHud() {
+  updateFrameGlow();
   $('cnum').textContent = `${String(li + 1).padStart(2, '0')} / ${String(LEVELS.length).padStart(2, '0')}`;
   $('cname').textContent = lvName(li);
   renderHints();
