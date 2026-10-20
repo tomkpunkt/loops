@@ -23,8 +23,8 @@
 
 ## Tagline
 
-- DE: Zwei Portale, ein Echo, eine Gravitationskanone. Und eine Testleitung, die nicht will, dass du gehst.
-- EN: Two portals, one echo, a gravity gun. And a Test Control that does not want you to leave.
+- DE: Die Anlage erwartet Sie bereits. Die Anlage schläft nie.
+- EN: The facility has been expecting you. The facility never sleeps.
 
 ## Beschreibung (EN, für die Seite)
 

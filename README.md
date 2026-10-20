@@ -1,5 +1,7 @@
 # Loops
 
+*The facility never sleeps.*
+
 ![Loops – Titel und zwei Testkammern](docs/screenshots.png)
 
 **Deutsch** · [English](#english)
