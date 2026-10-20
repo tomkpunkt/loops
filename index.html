@@ -2585,14 +2585,18 @@ function drawFlames(cx, cy, x, y) {
 function drawSpikes(cx, cy, x, y) {
   ctx.save();
   if (!spikeUp(cx, cy)) { ctx.translate(0, y * 2 + T); ctx.scale(1, -1); }
-  ctx.fillStyle = '#12171c'; ctx.fillRect(x, y + T - 6, T, 6);
-  ctx.fillStyle = '#3a4653'; ctx.fillRect(x, y + T - 6, T, 1);
+  // a bolted steel rail flush with the floor; every spike stands on it at the same height
+  const by = y + T - 5;
+  ctx.fillStyle = '#2d3743'; ctx.fillRect(x, by, T, 5);
+  ctx.fillStyle = '#5f7082'; ctx.fillRect(x, by, T, 1);
+  ctx.fillStyle = '#1c232b'; ctx.fillRect(x, y + T - 1, T, 1);
+  ctx.fillStyle = '#4b5866'; ctx.fillRect(x + 3, by + 2, 2, 2); ctx.fillRect(x + T - 5, by + 2, 2, 2);
   for (let i = 0; i < 4; i++) {
-    const bx = x + i * 8, tipY = y + 8 + hash2(cx, cy, 80 + i) * 3;
-    ctx.beginPath(); ctx.moveTo(bx + 0.5, y + T - 6); ctx.lineTo(bx + 4, tipY); ctx.lineTo(bx + 4, y + T - 6); ctx.closePath(); ctx.fillStyle = '#c4ced8'; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(bx + 4, tipY); ctx.lineTo(bx + 7.5, y + T - 6); ctx.lineTo(bx + 4, y + T - 6); ctx.closePath(); ctx.fillStyle = '#66727e'; ctx.fill();
+    const bx = x + i * 8, tipY = y + 9;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(bx + 1, by - 1, 7, 1);
+    ctx.beginPath(); ctx.moveTo(bx + 0.5, by); ctx.lineTo(bx + 4, tipY); ctx.lineTo(bx + 4, by); ctx.closePath(); ctx.fillStyle = '#c4ced8'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(bx + 4, tipY); ctx.lineTo(bx + 7.5, by); ctx.lineTo(bx + 4, by); ctx.closePath(); ctx.fillStyle = '#66727e'; ctx.fill();
     ctx.fillStyle = '#ffffff'; ctx.fillRect(bx + 3.5, tipY, 1, 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(bx, y + T - 7, 8, 1);
   }
   ctx.restore();
 }
