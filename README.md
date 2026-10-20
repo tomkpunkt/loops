@@ -38,6 +38,10 @@ Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu.
 - Deutsch und Englisch (automatisch nach Gerätesprache, umschaltbar unter „?“)
 - Fortschritt und Statistik werden lokal im Browser gespeichert
 
+## Soundtrack
+
+Der Abspann-Song als produzierte Version (mit Suno Pro erstellt): [`soundtrack/Loops_-_Welcome_Home.mp3`](soundtrack/Loops_-_Welcome_Home.mp3). Im Spiel selbst läuft er bewusst als synthetische WebAudio-Fassung mit derselben Melodie.
+
 ---
 
 ## English
@@ -75,5 +79,9 @@ More abilities and buttons unlock as you play.
 - Title, intro and outro with pixelated zoom
 - German and English (auto-detected from device language, switchable under "?")
 - Progress and stats are stored locally in the browser
+
+### Soundtrack
+
+The credits song as a produced version (made with Suno Pro): [`soundtrack/Loops_-_Welcome_Home.mp3`](soundtrack/Loops_-_Welcome_Home.mp3). In the game itself it deliberately plays as a synthesized WebAudio version with the same melody.
 
 Inspired by *Link Loop* and the *Portal* series. Fan project, not affiliated with either.
