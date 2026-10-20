@@ -275,6 +275,7 @@ const Snd = (() => {
     tfire() { noise({ dur: 0.18, vol: 0.2, freq: 1800, f2: 300 }); tone({ f: 220, f2: 60, type: 'sawtooth', dur: 0.2, vol: 0.09 }); },
     tbuzz() { tone({ f: 90 + Math.random() * 40, f2: 70, type: 'sawtooth', dur: 0.32, vol: 0.035 }); tone({ f: 180 + Math.random() * 60, type: 'square', dur: 0.18, vol: 0.015, delay: 0.05 }); noise({ dur: 0.25, vol: 0.05, freq: 3500, q: 6 }); },
     zap() { noise({ dur: 0.35, vol: 0.18, freq: 4200, q: 3 }); tone({ f: 120, f2: 80, type: 'sawtooth', dur: 0.4, vol: 0.08 }); for (let i = 0; i < 4; i++) tone({ f: 900 + Math.random() * 1600, type: 'square', dur: 0.03, vol: 0.04, delay: i * 0.05 }); },
+    burn() { noise({ dur: 0.5, vol: 0.16, freq: 700, f2: 2400, type: 'bandpass', q: 0.7 }); tone({ f: 180, f2: 70, type: 'sawtooth', dur: 0.35, vol: 0.05 }); },
     spike() { noise({ dur: 0.12, vol: 0.14, freq: 2400, q: 2 }); tone({ f: 420, f2: 120, type: 'triangle', dur: 0.18, vol: 0.08 }); },
     card(all) { tone({ f: 988, type: 'square', dur: 0.06, vol: 0.05 }); tone({ f: 1319, type: 'square', dur: 0.08, vol: 0.05, delay: 0.07 }); if (all) tone({ f: 1760, type: 'triangle', dur: 0.3, vol: 0.06, delay: 0.15 }); },
     powerSw(on) { noise({ dur: 0.08, vol: 0.12, freq: 900, type: 'lowpass' });
@@ -553,7 +554,7 @@ const LEVELS = [
     hint2: "Ihr Echo sammelt Karten für Sie ein, auch an Orten, die für Sie Endstation wären. Erst müssen Sie aber hinüber.",
     hint3: "Fliegen Sie vom Sims über ein Bodenportal aus der linken Wand hinüber. Drüben nehmen Sie auf, wie Sie per Portal durch das Gitter in die Zelle oben fallen. Ihr Echo holt die Karte, Sie gehen zum Ausgang.",
     quip: "Diese Zelle ist für genau eine Person. Sie sind zwei. Rechnen Sie selbst.",
-    map: ["################", "#..........#WW##", "#..........#..##", "#..........#Q.##", "W..........#BB##", "W..........#GG##", "W.P............#", "####.........###", "#............D.#", "#............DE#", "#.........WW####", "#.........######", "#.........######", "#.........######", "#......~~~######", "#WWWWWW#########"] },
+    map: ["################", "#..........#WW##", "#..........#..##", "#..........#Q.##", "W..........#BB##", "W..........#GG##", "W.P............#", "####.........###", "#............D.#", "#............DE#", "#.........WW####", "#.........######", "#.........######", "#.........######", "#......SSS######", "#WWWWWW#########"] },
   { name: "Fernzündung", echo: true,
     hint: "Im Schacht holen Sie Tempo, aber das Ziel sehen Sie von dort nicht. Ein klassischer Fall von schlechter Aussicht.",
     hint2: "Ihr Echo kann Portale setzen, während Sie fallen. Teamarbeit über die Zeit hinweg.",
@@ -603,17 +604,17 @@ const LEVELS = [
     quip: "Letzte Prüfung dieser Reihe. Hinter der Tür liegt Ihre Belohnung. Wirklich diesmal.",
     map: ["################", "#..............#", "#.......W......#", ">.......W......#", "#.......W......#", "R..............W", "R..............W", "R..............W", "#..............#", "#..............#", "#..............#", "####......######", "#..D......G.Q.##", "#..D......G...W#", "#K.D....P.GBBBW#", "######WW########"] },
   { name: "Greifarm", grav: true, portals: false,
-    hint: "Neu: Gravitationskanone. G oder „Greifen“ packt einen Würfel, auch durch ein Gitter hindurch, V oder „Werfen“ schleudert ihn in Zielrichtung. Der Würfel liegt über Ihnen, der Schalter hoch rechts hinter der Säure.",
-    hint2: "Greifen geht durch Gitter. Werfen geht über Säure. Kombinieren dürfen Sie selbst, wir glauben an Sie.",
+    hint: "Neu: Gravitationskanone. G oder „Greifen“ packt einen Würfel, auch durch ein Gitter hindurch, V oder „Werfen“ schleudert ihn in Zielrichtung. Der Würfel liegt über Ihnen, der Schalter hoch rechts hinter den Flammen. Neu: Flammen verbrennen Sie sofort, Würfel nur vorübergehend.",
+    hint2: "Greifen geht durch Gitter. Werfen geht über Flammen. Kombinieren dürfen Sie selbst, wir glauben an Sie.",
     hint3: "Greifen Sie den Würfel von unten durch das Gitter, zielen Sie schräg nach rechts oben und werfen Sie ihn auf den Schalter. Dann links durch die offene Tür.",
     quip: "Bitte greifen Sie nur nach Würfeln. Wir hatten da schon Zwischenfälle.",
-    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#......C.......#", "####..GGG...BBB#", "#..D.......#####", "#..D.......#####", "#E.D...P.~~#####", "################"] },
+    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#......C.......#", "####..GGG...BBB#", "#..D.......#####", "#..D.......#####", "#E.D...P.FF#####", "################"] },
   { name: "Würfelschild", grav: true, portals: false,
-    hint: "Der Laser fegt über den Boden, und dazwischen liegen Säurelöcher. Schieben reicht hier nicht, Sie müssen springen.",
+    hint: "Der Laser fegt über den Boden, und dazwischen liegen Starkstromflecken. Schieben reicht hier nicht, Sie müssen springen.",
     hint2: "Ein gehaltener Würfel schwebt dort, wohin Sie zielen. Auch zwischen Ihnen und einem Laser. Besonders dort.",
-    hint3: "Greifen Sie den Würfel und zielen Sie Richtung Laser, sodass er vor Ihnen schwebt. So geschützt springen Sie über die Säurelöcher zum Ausgang.",
+    hint3: "Greifen Sie den Würfel und zielen Sie Richtung Laser, sodass er vor Ihnen schwebt. So geschützt springen Sie über die Starkstromflecken zum Ausgang.",
     quip: "Ein Würfel als Schild. Genau dafür wurde er nicht entworfen.",
-    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#P.C..~...~..E.<", "################"] },
+    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#P.C..........E<", "######Z###Z#####"] },
   { name: "Ballistik", grav: true, portals: false,
     hint: "Der Schalter liegt oben, hinter einem Loch in der Decke. Hinaufklettern ist nicht vorgesehen.",
     hint2: "Würfel fliegen in Zielrichtung. Schräg nach oben ist auch eine Richtung.",
@@ -645,11 +646,11 @@ const LEVELS = [
     quip: "Pass und Torschuss. Leider ohne Publikum.",
     map: ["################", "#......#.......#", "#......#.......#", "#......#.......#", "#......#.......#", "#......#.......#", "#......#.......#", "#......#.......#", "#......#.......#", "#......#.......#", "#......#....BBB#", "#......#....####", "#......#....D..#", "#......d....D..#", "#bb.PC.d....D.E#", "################"] },
   { name: "Wachwechsel", echo: true, grav: true, portals: false,
-    hint: "Die gelbe Tür braucht jemanden auf dem gelben Schalter, und der türkise Schalter für den Ausgang liegt hinter der Säure.",
+    hint: "Die gelbe Tür braucht jemanden auf dem gelben Schalter, und der türkise Schalter für den Ausgang liegt hinter den Flammen.",
     hint2: "Ihr Echo bewacht Gelb, Ihr Würfel bewacht Türkis. Sie bewachen nichts, Sie gehen.",
-    hint3: "Nehmen Sie auf, wie Sie auf den gelben Schalter gehen. Dann tragen Sie den Würfel durch die offene Tür über die Säure und legen ihn auf den türkisen Schalter.",
+    hint3: "Nehmen Sie auf, wie Sie auf den gelben Schalter gehen. Dann tragen Sie den Würfel durch die offene Tür über die Flammen und legen ihn auf den türkisen Schalter.",
     quip: "Schichtwechsel. Die eine Hälfte von Ihnen hat jetzt Feierabend.",
-    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#.....##########", "#.....D......d.#", "#.....D......d.#", "#BB.PCD..~bb.dE#", "################"] },
+    map: ["################", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#..............#", "#.....##########", "#.....D......d.#", "#.....D......d.#", "#BB.PCD..Fbb.dE#", "################"] },
   { name: "Fallrohr", grav: true,
     hint: "Der Würfel steckt in einer Zelle, aus der Sie ihn nicht herausziehen können. Er fühlt sich dort sicher. Noch.",
     hint2: "Zielt die Kanone auf einen Würfel, stößt Werfen ihn weg, auch ohne Greifen. Was durch ein Portal gestoßen wird, fliegt woanders weiter.",
@@ -1037,6 +1038,7 @@ const TXT = {
       'Kleiner Tipp: Portale wirken besser, wenn man sie benutzt.', 'Unsere Geduld ist unendlich. Unser Strom nicht.', 'Falls Sie schlafen: bitte nicht auf dem Schalter.', 'Die Würfel werden ungeduldig. Sagen sie zumindest.'],
     DEATH_ZAP: ['Elektrisierend. Leider wörtlich.', 'Das war Starkstrom. Wir hatten es angeschrieben.', 'Ihre Haare stehen jetzt dauerhaft. Bitte weitermachen.', 'Stromschlag registriert. Die Rechnung geht an Sie.',
       'Gratulation, Sie leiten. Nicht das Projekt, den Strom.', 'Ihr Echo hätte das überlebt. Nur so als Anmerkung.'],
+    DEATH_FIRE: ['Gut durch. Wir hatten medium bestellt.', 'Die Flammen sind echt. Wir dachten, das sei offensichtlich.', 'Brandschutzübung bestanden. Von den Flammen.', 'Ihre Asche wurde ordnungsgemäß entsorgt.'],
     DEATH_SPIKE: ['Spitze. Im wörtlichen Sinn.', 'Die Stacheln sind dekorativ. Und tödlich.', 'Bitte nicht auf die Stacheln. Wir hatten das doch besprochen.', 'Das war ein Punkt für die Stacheln.',
       'Aufgespießt. Die Reinigung ist informiert.', 'Stacheln gewinnen gegen Sie. Würfel gewinnen gegen Stacheln. Denken Sie darüber nach.'],
     CARD: ['Zugang gewährt. Widerwillig.', 'Schlüsselkarte erkannt. Der Ausgang ist entsperrt.', 'Karte gelesen. Bitte nicht verbiegen.', 'Berechtigung erteilt. Bis auf Widerruf.'],
@@ -1089,6 +1091,7 @@ const TXT = {
       'Small hint: portals work better when you use them.', 'Our patience is infinite. Our power supply is not.', "If you're asleep: please not on the switch.", 'The cubes are getting impatient. Or so they say.'],
     DEATH_ZAP: ['Electrifying. Unfortunately, literally.', 'That was high voltage. There was a sign.', 'Your hair now stands up permanently. Please carry on.', 'Electric shock registered. The bill goes to you.',
       'Congratulations, you are a conductor. Not of an orchestra.', 'Your echo would have survived that. Just saying.'],
+    DEATH_FIRE: ['Well done. We ordered medium.', 'The flames are real. We thought that was obvious.', 'Fire drill passed. By the fire.', 'Your ashes have been disposed of properly.'],
     DEATH_SPIKE: ['Spiked. Literally.', 'The spikes are decorative. And lethal.', 'Please stay off the spikes. We discussed this.', 'One point for the spikes.',
       'Impaled. Cleaning has been notified.', 'Spikes beat you. Cubes beat spikes. Think about it.'],
     CARD: ['Access granted. Reluctantly.', 'Key card recognised. The exit is unlocked.', 'Card read. Please do not bend it.', 'Authorisation granted. Until revoked.'],
@@ -1161,14 +1164,14 @@ const TXT = {
       ["Fly-through", "This time you have to fly through the gate yourself. The gate only opens while someone stands on the switch below.", "Please do not fly into closed gates. The gates complain.", "Whatever your echo recorded, it keeps doing, even if you change the portals later. The kind of loyalty one dreams of.", "Leave your echo on the switch below. Then set the portals for the flight and launch yourself through the open gate."],
       ["Dress Rehearsal", "The door wants switch and receiver, and the acid is in the way again. Dress rehearsal means: no cube this time.", "Dress rehearsal. Mistakes are allowed. Repeats too. Many.", "Your echo can ride bridges too. And it waits at the destination for as long as you like.", "Lay the bridge and record yourself crossing onto the switch. Then reset the portals from the far bank and send the laser to the receiver."],
       ["Final Exam", "Switch in the sealed cell, laser to the receiver, both for the same door. The card is in the cell too. Right at the top, naturally.", "Last exam of this series. Your reward lies behind the door. Really, this time.", "Whatever your echo picks up on its way belongs to you. Even if it has to jump for it.", "Record yourself dropping into the cell by portal, jumping up under the card and staying on the switch. Then reset the portals and send the laser to the receiver. Something new waits beyond."],
-      ["Grabber", "New: gravity gun. G or \"Grab\" picks up a cube, even through a grille, V or \"Throw\" hurls it where you aim. The cube is above you, the switch high up on the right beyond the acid.", "Please only grab cubes. There have been incidents.", "Grabbing works through grilles. Throwing works across acid. Combining them is up to you. We believe in you.", "Grab the cube from below through the grille, aim diagonally up and to the right and throw it onto the switch. Then go left through the open door."],
-      ["Cube Shield", "The laser sweeps the floor, with acid pits in between. Pushing won't do here, you have to jump.", "A cube as a shield. Precisely what it was not designed for.", "A held cube floats wherever you aim. Including between you and a laser. Especially there.", "Grab the cube and aim toward the laser so it floats in front of you. Shielded like that, jump the acid pits to the exit."],
+      ["Grabber", "New: gravity gun. G or \"Grab\" picks up a cube, even through a grille, V or \"Throw\" hurls it where you aim. The cube is above you, the switch high up on the right beyond the flames. New: flames burn you instantly, cubes only temporarily.", "Please only grab cubes. There have been incidents.", "Grabbing works through grilles. Throwing works across flames. Combining them is up to you. We believe in you.", "Grab the cube from below through the grille, aim diagonally up and to the right and throw it onto the switch. Then go left through the open door."],
+      ["Cube Shield", "The laser sweeps the floor, with live patches in between. Pushing won't do here, you have to jump.", "A cube as a shield. Precisely what it was not designed for.", "A held cube floats wherever you aim. Including between you and a laser. Especially there.", "Grab the cube and aim toward the laser so it floats in front of you. Shielded like that, jump the live patches to the exit."],
       ["Ballistics", "The switch is up top, past a hole in the ceiling. Climbing up is not part of the plan.", "Physics class, practical part. There never was a theory part.", "Cubes fly where you aim. Diagonally upward is also a direction.", "Grab the cube, stand close beneath the ceiling hole and throw diagonally upward through it. It lands on the switch."],
       ["Pneumatic Post", "The switch is in a cell behind the grille, and you cannot reach the white surface high on the left wall.", "Parcel en route. Recipient: a switch. No return receipt.", "A thrown cube reaches places you cannot. Through portals it flies even further. Envy is inappropriate here.", "One portal high on the left wall, the other on the ceiling of the cell behind the grille. Then throw the cube into the wall portal, and it drops onto the switch in the cell."],
       ["Catapult", "The switch is on an island behind a wall. Throwing alone won't do, we built the wall extra high.", "Portal-powered projectile. Insurance has not been informed.", "A throw down into a floor portal is faster than any fall. What goes in fast comes out fast.", "One portal in the floor of the pit, one on the left wall. Throw the cube hard down into the pit, and it shoots out of the wall over the barrier onto the island."],
       ["Lift Platform", "The ledge is too high, even with a cube. So the cube has to go higher, and that takes someone to hold it.", "Your echo lifts for you. You lift for no one. Typical.", "Your echo can grab a cube and hold on to it. A floating cube is a step.", "Record yourself grabbing the cube, aiming up and waiting at the wall. Then climb: onto the echo, onto the cube, onto the ledge."],
       ["Assist", "No throw from here reaches the shelf with the switch, and the teal gate is just a low tunnel at floor level.", "Pass and shot. Sadly without an audience.", "Cubes can be carried. Even through tunnels someone else holds open.", "Your echo stands on the switch for the gate. Then carry the cube through the tunnel and throw it onto the shelf from inside."],
-      ["Changing of the Guard", "The yellow door needs someone on the yellow switch, and the teal switch for the exit is beyond the acid.", "Shift change. One half of you is now off duty.", "Your echo guards yellow, your cube guards teal. You guard nothing, you leave.", "Record yourself walking onto the yellow switch. Then carry the cube through the open door, across the acid, and put it on the teal switch."],
+      ["Changing of the Guard", "The yellow door needs someone on the yellow switch, and the teal switch for the exit is beyond the flames.", "Shift change. One half of you is now off duty.", "Your echo guards yellow, your cube guards teal. You guard nothing, you leave.", "Record yourself walking onto the yellow switch. Then carry the cube through the open door, across the flames, and put it on the teal switch."],
       ["Drop Chute", "The cube is stuck in a cell you cannot pull it out of. It feels safe in there. For now.", "Express delivery at top speed. Please stay out of the way.", "If the gun is aimed at a cube, Throw punts it away, even without grabbing. Whatever is punted through a portal keeps flying somewhere else.", "One portal on the back wall of the cell, one where the cube should come out. Then aim at the cube and punt it through the portal with Throw."],
       ["Clear Path", "The laser should reach the receiver on the left, but the cube on the grille is in the way. The door also wants the switch.", "One cube, two jobs. Welcome to the economy.", "A cube that is in the way is a cube that is needed elsewhere.", "Grab the cube off the grille and put it on the switch. Then send the laser to the receiver on the left with a portal."],
       ["Double Hold", "One switch is in a pit nobody gets out of, the other up on the shelf. You have one cube and one echo.", "One sits in the pit, one throws. You know the drill.", "The pit needs someone who does not have to come back. The shelf needs something that can be thrown.", "Record yourself jumping into the pit onto the switch. Then throw the cube onto the shelf."],
@@ -1251,7 +1254,7 @@ let introT = 0, state = 'play', winTimer = 0, time = 0, deathFlash = 0;
 let echo = null, recording = null, crashT = 0, gotGun = 0;
 let flashes = [], subtitle = null, flicker = 0, nextFlicker = 20;
 let lasers = [], receivers = [], emitters = [], projectors = [], bridges = [];
-let particles = [], beams = [], motes = [], trail = [], acidCells = [], exitCells = [];
+let particles = [], beams = [], motes = [], trail = [], acidCells = [], fireCells = [], exitCells = [];
 // power: levels with a power lever (X) start in the dark unless marked powered. No power = no light, no exit, no turrets, lasers, bridges or live floors.
 let leverCd = 0, power = true, hasPower = false, switches = [], cards = [], cardsLeft = 0, darkA = 0, revealT = 0, powerFx = 0, lockT = 0, zapCells = [];
 let aim = { x: W / 2, y: H / 2, active: false, mouse: false, mode: 'none', dx: 1, dy: 0 };
@@ -1283,10 +1286,11 @@ function loadLevel(i, quiet) {
   }
   bodies = []; portals = { blue: null, orange: null }; lastBtnState = null;
   particles = []; beams = []; trail = [];
-  acidCells = []; exitCells = []; receivers = []; emitters = []; lasers = []; projectors = []; bridges = [];
+  acidCells = []; fireCells = []; exitCells = []; receivers = []; emitters = []; lasers = []; projectors = []; bridges = [];
   switches = []; cards = []; zapCells = [];
   for (let y = 0; y < grid.length; y++) for (let x = 0; x < grid[y].length; x++) {
     if (grid[y][x] === '~') acidCells.push([x, y]);
+    if (grid[y][x] === 'F') fireCells.push([x, y]);
     if (grid[y][x] === 'Z') zapCells.push([x, y]);
     if (grid[y][x] === 'X') switches.push({ x, y, occ: true });
     if (grid[y][x] === 'Q') { cards.push({ x: x * T + T / 2, y: y * T + T / 2, got: false, t: 0 }); grid[y][x] = '.'; }
@@ -1886,7 +1890,7 @@ function die(cause) {
   player.x = player.sx; player.y = player.sy; player.vx = player.vy = 0; player.vang = 0;
   deathFlash = 0.35; trail = [];
   stats.deaths++; lvStat(li).d++; saveStats(); shake(4, 0.2); hintTick('d');
-  Snd.die(); say(pickTxt(cause === 'zap' ? 'DEATH_ZAP' : cause === 'spike' ? 'DEATH_SPIKE' : 'DEATH'), 1.8);
+  Snd.die(); say(pickTxt(cause === 'zap' ? 'DEATH_ZAP' : cause === 'spike' ? 'DEATH_SPIKE' : cause === 'fire' ? 'DEATH_FIRE' : 'DEATH'), 1.8);
 }
 
 const spikeUp = (cx, cy) => !(isSolidChar(charAt(cx, cy - 1)) && !isSolidChar(charAt(cx, cy + 1)) && charAt(cx, cy + 1) !== 'S'); // ceiling spikes hang down
@@ -1971,9 +1975,11 @@ function step(dt) {
     // acid
     const x0 = Math.floor((b.x - b.w / 2) / T), x1 = Math.floor((b.x + b.w / 2 - 0.01) / T);
     const y0 = Math.floor((b.y - b.h / 2) / T), y1 = Math.floor((b.y + b.h / 2 - 0.01) / T);
-    let acid = false;
-    for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++)
-      if (charAt(cx, cy) === '~' && b.y + b.h / 2 > cy * T + 10 && !b.heldBy) acid = true; // a held cube floats in the beam
+    let acid = false, fire = false;
+    for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) {
+      const ch = charAt(cx, cy);
+      if ((ch === '~' || ch === 'F') && b.y + b.h / 2 > cy * T + 10 && !b.heldBy) { acid = true; if (ch === 'F') fire = true; } // a held cube floats in the beam; flames burn like acid
+    }
     // spikes (figures only) and live floors (only you: your echo is immune to current)
     if (b.kind === 'turret' && b.alive && power && zapCells.length && !b.heldBy && touchesZ(b)) { zapFx(b); disableTurret(b); } // a live floor fries turrets
     if ((b.kind === 'player' || b.kind === 'echo') && !acid) {
@@ -1993,10 +1999,10 @@ function step(dt) {
       }
     }
     if (acid || b.y > H + 60) {
-      if (b.kind === 'player') die();
+      if (b.kind === 'player') { if (fire) { burst(b.x, b.y, '#ffb347', 20); burst(b.x, b.y, '#ff5a2a', 10); Snd.burn(); die('fire'); } else die(); }
       else if (b.kind === 'echo') { burst(b.x, b.y, '#b48cff', 16); b.dead = true; }
       else if (b.kind === 'turret') { if (b.heldBy) releaseHeld(b.heldBy); burst(b.x, b.y, '#b8ff6a', 18); burst(b.x, b.y, '#ff6a5a', 8); b.dead = true; if (b.alive) Snd.tdown(); }
-      else { if (b.heldBy) releaseHeld(b.heldBy); burst(b.x, b.y, '#b8ff6a', 14); b.x = b.sx; b.y = b.sy; b.vx = b.vy = 0; b.vang = 0; }
+      else { if (b.heldBy) releaseHeld(b.heldBy); burst(b.x, b.y, fire ? '#ffb347' : '#b8ff6a', 14); b.x = b.sx; b.y = b.sy; b.vx = b.vy = 0; b.vang = 0; }
     }
   }
 
@@ -2107,6 +2113,10 @@ function step(dt) {
   if (power) for (const [zx, zy] of zapCells) if (Math.random() < dt * 0.9) {
     const up = !isSolidChar(charAt(zx, zy - 1)), sx = zx * T + 3 + Math.random() * (T - 6);
     spark({ x: sx, y: up ? zy * T - 1 : zy * T + T / 2, vx: (Math.random() - 0.5) * 70, vy: -30 - Math.random() * 50, g: 260, drag: 1.5, size: 1.3, life: 0.3, color: Math.random() < 0.5 ? '#bfe3ff' : '#7fc8ff' });
+  }
+  for (const [fx, fy] of fireCells) {
+    if (Math.random() < dt * 9) spark({ x: fx * T + 5 + Math.random() * (T - 10), y: fy * T + T - 8, vx: (Math.random() - 0.5) * 30, vy: -70 - Math.random() * 80, g: -30, drag: 1.2, size: 1 + Math.random() * 1.6, life: 0.5 + Math.random() * 0.5, color: Math.random() < 0.6 ? '#ffb347' : '#ff6a2a' });
+    if (!SETTINGS.calm && Math.random() < dt * 1.5) spark({ x: fx * T + 6 + Math.random() * (T - 12), y: fy * T + 6, vx: (Math.random() - 0.5) * 12, vy: -18 - Math.random() * 14, drag: 0.6, size: 3 + Math.random() * 3, life: 1 + Math.random() * 0.6, color: 'rgba(90,90,100,0.35)', glow: false });
   }
   for (const [ax, ay] of acidCells) if (Math.random() < dt * 1.4)
     spark({ x: ax * T + 4 + Math.random() * (T - 8), y: ay * T + 12, vy: -12 - Math.random() * 18, drag: 0.5, size: 1.5 + Math.random() * 2, life: 0.6 + Math.random() * 0.5, color: '#b8ff6a' });
@@ -2346,6 +2356,8 @@ function drawTiles() {
         const bx = x + 4 + hsh * (T - 8), by = y + T - 3 - ph * (T - 14);
         ctx.fillStyle = `rgba(200,255,140,${0.55 * (1 - ph)})`; ctx.beginPath(); ctx.arc(bx, by, 1 + hsh * 1.3, 0, Math.PI * 2); ctx.fill();
       }
+    } else if (c === 'F') {
+      drawFlames(cx, cy, x, y);
     } else if (c === 'Z') {
       drawLiveFloor(cx, cy, x, y);
     } else if (c === 'S') {
@@ -2421,6 +2433,25 @@ function drawLiveFloor(cx, cy, x, y) {
   ctx.restore(); ctx.globalAlpha = 1;
 }
 // Spikes: four steel blades on a base strip; they hang from the ceiling when there is nothing below them.
+function drawFlames(cx, cy, x, y) {
+  // a burner grate in the floor with tongues of fire licking up out of it
+  ctx.fillStyle = '#1a1512'; ctx.fillRect(x, y + T - 6, T, 6);
+  ctx.fillStyle = '#3a2a1e'; for (let i = 2; i < T; i += 6) ctx.fillRect(x + i, y + T - 6, 3, 2);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 5; k++) {
+    const hs = hash2(cx, cy, 30 + k), fx = x + 3 + (k + 0.5) * (T - 6) / 5, sp = 7 + hs * 5;
+    const fl = 0.55 + 0.45 * Math.sin(time * sp + hs * 9) * Math.sin(time * (sp * 0.53) + k);
+    const h = 12 + fl * 14 + hs * 4, w = 4 + hs * 2.5, sway = Math.sin(time * 5 + k * 1.7) * 2.5;
+    const g = ctx.createLinearGradient(0, y + T - 5, 0, y + T - 5 - h);
+    g.addColorStop(0, 'rgba(255,230,140,0.95)'); g.addColorStop(0.35, 'rgba(255,150,40,0.85)'); g.addColorStop(1, 'rgba(200,40,10,0)');
+    ctx.fillStyle = g; ctx.beginPath();
+    ctx.moveTo(fx - w, y + T - 5);
+    ctx.quadraticCurveTo(fx - w * 0.9 + sway * 0.4, y + T - 5 - h * 0.55, fx + sway, y + T - 5 - h);
+    ctx.quadraticCurveTo(fx + w * 0.9 + sway * 0.4, y + T - 5 - h * 0.55, fx + w, y + T - 5);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
 function drawSpikes(cx, cy, x, y) {
   ctx.save();
   if (!spikeUp(cx, cy)) { ctx.translate(0, y * 2 + T); ctx.scale(1, -1); }
@@ -2486,6 +2517,7 @@ function drawDark() {
   for (const p of [portals.blue, portals.orange]) if (p) hole(p.c.x, p.c.y, 48, 0.65);
   for (const c of cards) if (!c.got) hole(c.x, c.y, 28, 0.6);
   for (const [ax, ay] of acidCells) hole(ax * T + T / 2, ay * T + 14, 26, 0.35);
+  for (const [fx, fy] of fireCells) hole(fx * T + T / 2, fy * T + 14, 40, 0.6);
   for (const b of bodies) if (b.heldBy) hole(b.x, b.y, 30, 0.4);
   if (LEVELS[li].darkExit) for (const [ex, ey] of exitCells) hole(ex * T + T / 2, ey * T, 56, 0.9); // the emergency exit glows in the dark
   ctx.drawImage(darkCv, 0, 0, W, H);
@@ -2818,6 +2850,7 @@ function drawLights() {
     glowDot(cx, cy, 40, hexA(COL[p.color], 0.25 * pulse), 1);
   }
   for (const [ax, ay] of acidCells) glowDot(ax * T + T / 2, ay * T + 10, 40, 'rgba(140,230,70,0.10)', 1);
+  for (const [fx, fy] of fireCells) glowDot(fx * T + T / 2, fy * T + 16, 52, `rgba(255,140,40,${0.16 + 0.05 * Math.sin(time * 11 + fx * 3)})`, 1);
   for (const [ex, ey] of exitCells) glowDot(ex * T + T / 2, ey * T, 56, `rgba(123,224,138,${0.10 + 0.05 * Math.sin(time * 4)})`, 1);
   for (const g of btnGroups) for (let cx = g.x0; cx <= g.x1; cx++)
     glowDot(cx * T + T / 2, g.y * T + T - 6, 26, g.on ? 'rgba(123,224,138,0.22)' : 'rgba(224,86,74,0.18)', 1);
