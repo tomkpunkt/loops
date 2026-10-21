@@ -128,6 +128,16 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
   .mid{grid-column:3;grid-row:2;align-self:center;justify-self:center;width:min(220px,100%)}
   .stick{--sz:clamp(96px,32vh,140px)}
 }
+/* controller mode: chamber fills the screen, touch controls and HUD strip hidden */
+body.pad{padding:0;margin:0;background:#000;overflow:hidden}
+body.pad .wrap{display:flex!important;max-width:none;gap:0;min-height:100dvh;height:100dvh;justify-content:center;align-items:center}
+body.pad .hud,body.pad .ctrl,body.pad .taphint,body.pad .keys{display:none!important}
+body.pad .stage{border-radius:0;grid-column:auto;grid-row:auto}
+body.pad canvas{cursor:none}
+.padfocus{outline:2px solid var(--orange)!important;outline-offset:3px}
+.pmenu{display:grid;gap:8px;max-width:320px}
+.pmenu .btn{text-align:left;padding:10px 14px;font-size:.9rem}
+.padkeys{color:var(--muted);font-size:.75rem;margin:0}
 </style>
 
 <div class="wrap">
@@ -157,8 +167,22 @@ kbd{font:500 .74rem var(--mono);color:var(--fg);border:1px solid var(--line);bor
         <h3 data-t="hControls">Steuerung</h3>
         <p class="keys"><kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo (ab 17) · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen (ab 33)</p>
         <p class="taphint">Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Ab Kammer 17 gibt es die Echo-Taste, ab Kammer 33 Greifen und Werfen.</p>
-        <p class="padnote" id="padnote" hidden>Gamepad: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start neu.</p>
+        <p class="padnote" id="padnote" hidden>Controller: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start Pause, Select neu starten.</p>
         <button class="btn close" id="helpClose" type="button">Weiterspielen</button>
+      </div>
+    </div>
+    <div class="help" id="pause" hidden>
+      <div class="helpbody">
+        <h2>L<span>O</span><span>O</span>PS</h2>
+        <h3 data-t="hPause">Pause</h3>
+        <div class="pmenu">
+          <button class="btn" type="button" id="pResume" data-t="resume">Weiterspielen</button>
+          <button class="btn" type="button" id="pRestart" data-t="pRestart">Kammer neu starten</button>
+          <button class="btn" type="button" id="pHelp" data-t="pHelp">Hinweis und Kammern</button>
+          <button class="btn" type="button" id="pOpts" data-t="hOpts">Optionen</button>
+          <button class="btn" type="button" id="pFull" data-t="pFull">Vollbild an/aus</button>
+        </div>
+        <p class="padkeys" data-t="padMenuKeys">Steuerkreuz wählen · A bestätigen · B zurück · Start schließen</p>
       </div>
     </div>
     <div class="help" id="opts" hidden>
@@ -1076,7 +1100,8 @@ const TXT = {
     hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
-    padnote: 'Gamepad: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start neu.',
+    padnote: 'Controller: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start Pause, Select neu starten.',
+    hPause: 'Pause', pRestart: 'Kammer neu starten', pHelp: 'Hinweis und Kammern', pFull: 'Vollbild an/aus', padMenuKeys: 'Steuerkreuz wählen · A bestätigen · B zurück · Start schließen',
     resume: 'Weiterspielen', move: 'Laufen', aim: 'Zielen', blue: 'Blaues Portal', orange: 'Oranges Portal', jump: 'Sprung', echo: 'Echo', grab: 'Greifen', throw: 'Werfen'
   },
   en: {
@@ -1128,7 +1153,8 @@ const TXT = {
     hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
-    padnote: 'Gamepad: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start restart.',
+    padnote: 'Controller: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start pause, Select restart.',
+    hPause: 'Paused', pRestart: 'Restart chamber', pHelp: 'Hint and chambers', pFull: 'Toggle fullscreen', padMenuKeys: 'D-pad select · A confirm · B back · Start close',
     resume: 'Resume', move: 'Move', aim: 'Aim', blue: 'Blue portal', orange: 'Orange portal', jump: 'Jump', echo: 'Echo', grab: 'Grab', throw: 'Throw',
     QUIPS: ['Welcome back. The feeling of being in two places at once is normal.', 'Momentum is free. Unfortunately, so is acid.', 'The cube has no feelings. We checked.',
       'Infinite loops are expressly permitted in this facility.', 'What falls in comes out. Physics is very consistent about that.', 'Two switches. We did not miscount.',
@@ -3921,7 +3947,7 @@ function layout() {
   const others = kids.reduce((h, c) => h + c.offsetHeight, 0) + gap * kids.length;
   const cs = getComputedStyle(document.body);
   const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(getComputedStyle(document.documentElement).paddingTop || 0) + parseFloat(getComputedStyle(document.documentElement).paddingBottom || 0);
-  const availH = Math.max(220, window.innerHeight - others - pad - 4);
+  const availH = padMode ? window.innerHeight : Math.max(220, window.innerHeight - others - pad - 4);
   const maxW = wrap.clientWidth;
   const w = Math.min(maxW, availH * W / H);
   stage.style.width = Math.floor(w) + 'px';
@@ -3933,7 +3959,8 @@ let helpOpen = false, panel = null;
 function setPanel(name) {
   panel = name; helpOpen = !!name;
   if (name === 'help') renderDbgStats();
-  $('help').hidden = name !== 'help'; $('opts').hidden = name !== 'opts';
+  $('help').hidden = name !== 'help'; $('opts').hidden = name !== 'opts'; $('pause').hidden = name !== 'pause';
+  padFocusClear();
   if (name === 'help') $('helpBtn').classList.remove('new');
   $('helpBtn').setAttribute('aria-expanded', String(name === 'help')); $('optsBtn').setAttribute('aria-expanded', String(name === 'opts'));
   input.left = input.right = input.jump = false; input.axis = 0;
@@ -3953,7 +3980,7 @@ function dbgStatsText() {
 }
 function setHelp(on) {
   if (on) return setPanel('help');
-  panel = null; helpOpen = false; $('help').hidden = true; $('opts').hidden = true; $('helpBtn').setAttribute('aria-expanded', 'false'); $('optsBtn').setAttribute('aria-expanded', 'false');
+  panel = null; helpOpen = false; $('help').hidden = true; $('opts').hidden = true; $('pause').hidden = true; padFocusClear(); $('helpBtn').setAttribute('aria-expanded', 'false'); $('optsBtn').setAttribute('aria-expanded', 'false');
   input.left = input.right = input.jump = false; input.axis = 0;
   if (!on) canvas.focus();
 }
@@ -4093,6 +4120,65 @@ $('ctrl').addEventListener('touchstart', e => e.preventDefault(), { passive: fal
 
 // ---------- physical gamepad ----------
 let padPrev = [];
+// ---------- controller: gameplay, pause menu and menu navigation; switches the page into a full-screen controller layout ----------
+let padMode = false, padFrom = null, padRep = { dir: null, t: 0 }, padLast = 0, fsWanted = false;
+function tryFullscreen(force) {
+  const el = document.documentElement;
+  if (document.fullscreenElement) { if (force) document.exitFullscreen().catch(() => {}); return; }
+  if (!el.requestFullscreen) return;
+  try { const pr = el.requestFullscreen({ navigationUI: 'hide' }); fsWanted = true; if (pr && pr.then) pr.then(() => { fsWanted = false; }, () => { fsWanted = true; }); } catch (e) { fsWanted = true; }
+}
+function setPadMode(on) {
+  if (padMode === on) return;
+  padMode = on; document.body.classList.toggle('pad', on);
+  if (on) tryFullscreen(); else fsWanted = false;
+  layout();
+}
+// any real user gesture (key, mouse) gets a second chance at full screen if the controller could not open it
+window.addEventListener('keydown', () => { if (padMode && fsWanted && !document.fullscreenElement) tryFullscreen(); }, true);
+window.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch' && padMode) { setPadMode(false); return; }
+  if (padMode && fsWanted && !document.fullscreenElement) tryFullscreen();
+}, true);
+window.addEventListener('gamepaddisconnected', () => { const l = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(g => g && g.connected) : []; if (!l.length) setPadMode(false); });
+document.addEventListener('fullscreenchange', () => setTimeout(layout, 50));
+function padFocusClear() { document.querySelectorAll('.padfocus').forEach(el => el.classList.remove('padfocus')); }
+function panelEl() { return panel ? $(panel) : null; }
+function padItems() {
+  const box = panelEl(); if (!box) return [];
+  return Array.from(box.querySelectorAll('button, input')).filter(el => !el.disabled && el.offsetParent !== null && el.getClientRects().length);
+}
+function padFocus(el) {
+  padFocusClear(); if (!el) return;
+  el.classList.add('padfocus'); try { el.focus({ preventScroll: true }); } catch (e) {}
+  if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+function padCurrent() { const el = document.querySelector('.padfocus'); return el && padItems().includes(el) ? el : null; }
+function padMove(dir) {
+  const items = padItems(); if (!items.length) return;
+  const cur = padCurrent();
+  if (!cur) { padFocus(items[0]); return; }
+  if (cur.type === 'range' && (dir === 'left' || dir === 'right')) {
+    const st = +cur.step || 0.05; cur.value = Math.max(+cur.min, Math.min(+cur.max, +cur.value + (dir === 'right' ? st : -st)));
+    cur.dispatchEvent(new Event('input', { bubbles: true })); cur.dispatchEvent(new Event('change', { bubbles: true })); return;
+  }
+  const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const v = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+  let best = null, bs = Infinity;
+  for (const el of items) {
+    if (el === cur) continue;
+    const q = el.getBoundingClientRect(), dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy;
+    const along = dx * v[0] + dy * v[1]; if (along <= 4) continue;
+    const across = Math.abs(dx * v[1] - dy * v[0]), sc = along + across * 2.2;
+    if (sc < bs) { bs = sc; best = el; }
+  }
+  if (best) padFocus(best);
+}
+function padBack() {
+  if (panel === 'pause' || !padFrom) { padFrom = null; setPanel(null); return; }
+  padFrom = null; setPanel('pause'); padFocus(padItems()[0]);
+}
+function openPause() { padFrom = null; setPanel('pause'); padFocus(padItems()[0]); Snd.button && Snd.button(true); }
 function pollPad() {
   let gp = null;
   try { const list = navigator.getGamepads ? navigator.getGamepads() : []; for (const g of list) if (g && g.connected) { gp = g; break; } } catch (_) {}
@@ -4100,8 +4186,26 @@ function pollPad() {
   if (!gp) { input.padAxis = 0; held.pad = false; padPrev = []; return; }
   const b = i => !!(gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.5));
   const edge = i => b(i) && !padPrev[i];
-  if (cine) { if (gp.buttons.some((_, i) => edge(i))) cineInput(); padPrev = gp.buttons.map(x => !!(x && (x.pressed || x.value > 0.5))); input.padAxis = 0; return; }
-  const ax = gp.axes[0] || 0, dpad = (b(15) ? 1 : 0) - (b(14) ? 1 : 0);
+  const done = () => { padPrev = gp.buttons.map(x => !!(x && (x.pressed || x.value > 0.5))); };
+  const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
+  // the first real input from a controller switches to the controller layout
+  if (!padMode && (gp.buttons.some((_, i) => edge(i)) || Math.abs(ax) > 0.6 || Math.abs(ay) > 0.6)) setPadMode(true);
+  if (cine) { if (gp.buttons.some((_, i) => edge(i))) cineInput(); done(); input.padAxis = 0; return; }
+  if (panel) { // menu navigation
+    input.padAxis = 0; held.pad = true;
+    const dir = b(12) || ay < -0.6 ? 'up' : b(13) || ay > 0.6 ? 'down' : b(14) || ax < -0.6 ? 'left' : b(15) || ax > 0.6 ? 'right' : null;
+    const now = performance.now();
+    if (dir !== padRep.dir) { padRep.dir = dir; padRep.t = now + 380; if (dir) padMove(dir); }
+    else if (dir && now >= padRep.t) { padRep.t = now + 110; padMove(dir); }
+    if (edge(0)) { const cur = padCurrent(); if (cur) { if (cur.type !== 'range') cur.click(); } else padFocus(padItems()[0]); }
+    else if (edge(1)) padBack();
+    else if (edge(9)) { padFrom = null; setPanel(null); }
+    done(); return;
+  }
+  padRep.dir = null;
+  if (edge(9)) { if (state === 'done') loadLevel(0); else openPause(); done(); return; }
+  if (edge(8)) loadLevel(state === 'done' ? 0 : li);
+  const dpad = (b(15) ? 1 : 0) - (b(14) ? 1 : 0);
   input.padAxis = Math.abs(ax) > 0.22 ? ax : dpad;
   if (b(0) && !held.pad) pressJump();
   held.pad = b(0);
@@ -4112,9 +4216,13 @@ function pollPad() {
   if (edge(3)) toggleEcho();
   if (edge(2)) gravGrab(player);
   if (edge(1)) gravThrow(player);
-  if (edge(9)) loadLevel(state === 'done' ? 0 : li);
-  padPrev = gp.buttons.map(x => !!(x && (x.pressed || x.value > 0.5)));
+  done();
 }
+$('pResume').addEventListener('click', () => { padFrom = null; setPanel(null); });
+$('pRestart').addEventListener('click', () => { padFrom = null; setPanel(null); loadLevel(state === 'done' ? 0 : li); });
+$('pHelp').addEventListener('click', () => { setPanel('help'); padFrom = 'pause'; if (padMode) { const cur = document.querySelector('#dots button[aria-current="true"]'); padFocus(cur || padItems()[0]); } });
+$('pOpts').addEventListener('click', () => { setPanel('opts'); padFrom = 'pause'; if (padMode) padFocus(padItems()[0]); });
+$('pFull').addEventListener('click', () => tryFullscreen(true));
 
 const wakeAudio = () => Snd.init();
 document.addEventListener('visibilitychange', () => {

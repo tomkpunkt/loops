@@ -22,10 +22,11 @@ Das ganze Spiel steckt in einer einzigen Datei, `index.html`, ohne Abhängigkeit
 | Laufen | A / D | linker Stick | linker Stick |
 | Springen | W / Leertaste | „Sprung“ oder Stick nach oben | A |
 | Blaues / oranges Portal | Links- / Rechtsklick | Portal-Tasten + rechter Stick | LB/LT · RB/RT |
-| Neu starten | R | ↻ | Start |
+| Pause-Menü | Esc | – | Start |
+| Neu starten | R | ↻ | Select |
 | Hinweis & Kammern | H | ? | – |
 
-Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu.
+Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu. Sobald ein Controller erkannt wird, wechselt das Spiel in eine Vollbild-Ansicht ohne Touch-Steuerung (z. B. für das Steam Deck); alle Menüs lassen sich dann mit Steuerkreuz, A und B bedienen.
 
 ## Features
 
@@ -64,10 +65,11 @@ The whole game is a single file, `index.html`, with no dependencies and no build
 | Move | A / D | left stick | left stick |
 | Jump | W / Space | "Jump" or push stick up | A |
 | Blue / orange portal | left / right click | portal buttons + right stick | LB/LT · RB/RT |
-| Restart | R | ↻ | Start |
+| Pause menu | Esc | – | Start |
+| Restart | R | ↻ | Select |
 | Hint & chambers | H | ? | – |
 
-More abilities and buttons unlock as you play.
+More abilities and buttons unlock as you play. As soon as a controller is detected, the game switches to a full-screen layout without touch controls (e.g. for the Steam Deck); all menus can then be used with the D-pad, A and B.
 
 ### Features
 
