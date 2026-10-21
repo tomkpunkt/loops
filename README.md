@@ -40,8 +40,12 @@ Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu. Sobald ein Con
 - Prozedural gezeichnete Grafik im Pixel-Industriestil, Partikel und Licht
 - Prozedurale „Mumble“-Sprachausgabe der Testleitung (WebAudio)
 - Titel, Intro und Outro mit Pixel-Zoom
-- Deutsch und Englisch (automatisch nach Gerätesprache, umschaltbar unter „?“)
+- Deutsch und Englisch (automatisch nach Gerätesprache, umschaltbar in den Optionen)
 - Fortschritt und Statistik werden lokal im Browser gespeichert
+
+## Übersetzen
+
+Alle Texte stehen in `index.html` im Abschnitt **TEXTS**, getrennt vom Code: `TXT` enthält Oberfläche und Sprüche der Testleitung, `LEVEL_TXT` Name, Hinweise und Spruch jeder Kammer. Platzhalter sind `{name}`. Eine neue Sprache braucht einen Eintrag in `LANGS` und je einen übersetzten Block in `TXT` und `LEVEL_TXT`, dann erscheint sie automatisch in der Sprachauswahl.
 
 ## Soundtrack
 
@@ -85,8 +89,12 @@ More abilities and buttons unlock as you play. As soon as a controller is detect
 - Procedurally drawn industrial pixel-style art, particles and lighting
 - Procedural "mumble" voice for Test Control (WebAudio)
 - Title, intro and outro with pixelated zoom
-- German and English (auto-detected from device language, switchable under "?")
+- German and English (auto-detected from device language, switchable in the options)
 - Progress and stats are stored locally in the browser
+
+### Translating
+
+All text lives in `index.html` in the **TEXTS** section, separate from the code: `TXT` holds the interface and Test Control's lines, `LEVEL_TXT` the name, hints and quip of every chamber. Placeholders are `{name}`. A new language needs an entry in `LANGS` and one translated block each in `TXT` and `LEVEL_TXT`; it then shows up in the language menu automatically.
 
 ### Soundtrack
 
