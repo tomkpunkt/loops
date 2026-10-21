@@ -1260,7 +1260,7 @@ const lvHint = i => lvTxt(i).hints[0];
 const lvQuip = i => lvTxt(i).quip || '';
 
 const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d'); // swapped briefly while foreground layers are drawn for the lighting pass
 let k = 1;
 
 let btnGroups = [], lastBtnState = null;
@@ -2538,6 +2538,66 @@ function nmReady() {
   const key = staticKey + ':' + li;
   if (NM.key !== key) { NM.key = key; nmBuildMaps(); nmUpload(); }
   return true;
+}
+
+// ---------- lighting for the foreground (doors, switches, cards, figures, cubes, turrets) ----------
+// These change every frame, so their relief is worked out on the GPU from their own brightness and outline.
+const NMF = { gl: null, cv: null, layer: null, u: null, tex: null };
+function nmfInit() {
+  if (NMF.gl !== null) return !!NMF.gl;
+  const cv = document.createElement('canvas'), gl = cv.getContext('webgl', { premultipliedAlpha: false, preserveDrawingBuffer: true });
+  if (!gl) { NMF.gl = false; return false; }
+  const vs = `attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }`;
+  const fs = `precision mediump float;
+    varying vec2 uv; uniform sampler2D fg; uniform vec2 size, tx; uniform float amb, kn;
+    uniform vec4 L[${NM.MAXL}]; uniform vec3 C[${NM.MAXL}]; uniform int n;
+    float h(vec2 p){ vec4 c = texture2D(fg, p); return (dot(c.rgb, vec3(0.3, 0.59, 0.11)) * 0.8 + 0.6) * c.a; }
+    void main(){
+      vec4 c = texture2D(fg, uv); if (c.a < 0.01) { gl_FragColor = vec4(0.0); return; }
+      float dx = h(uv + vec2(tx.x, 0.0)) - h(uv - vec2(tx.x, 0.0)), dy = h(uv + vec2(0.0, tx.y)) - h(uv - vec2(0.0, tx.y));
+      vec3 N = normalize(vec3(-dx * kn, -dy * kn, 1.0));
+      vec2 P = uv * size; vec3 sum = vec3(0.0), spec = vec3(0.0);
+      for (int i = 0; i < ${NM.MAXL}; i++) { if (i >= n) break;
+        vec3 d = vec3(L[i].xy - P, L[i].z); float att = clamp(1.0 - length(d.xy) / L[i].w, 0.0, 1.0); att *= att;
+        vec3 Ld = normalize(d); sum += C[i] * max(dot(N, Ld), 0.0) * att;
+        spec += C[i] * pow(max(dot(N, normalize(Ld + vec3(0.0, 0.0, 1.0))), 0.0), 18.0) * att * 0.7;
+      }
+      vec3 lit = c.rgb * (amb + sum) + spec;
+      float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b));
+      float glow = smoothstep(0.45, 0.75, mx - mn) * smoothstep(0.55, 0.9, mx); // lamps, eyes, exit signs stay self-lit
+      gl_FragColor = vec4(mix(lit, c.rgb, glow), c.a);
+    }`;
+  const sh = (t, src) => { const x = gl.createShader(t); gl.shaderSource(x, src); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); return x; };
+  try {
+    const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr); gl.useProgram(pr);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    NMF.tex = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, NMF.tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    NMF.u = nm => gl.getUniformLocation(pr, nm); gl.uniform1i(NMF.u('fg'), 0);
+    NMF.gl = gl; NMF.cv = cv; NMF.layer = document.createElement('canvas');
+  } catch (e) { console.warn('foreground lighting off:', e); NMF.gl = false; return false; }
+  return true;
+}
+// draws fn() into a transparent layer, lights it and puts it on the screen; without lighting it just draws
+function litLayer(fn) {
+  if (!NM.on || !NM.gl || !nmfInit()) { fn(); return; }
+  const main = ctx, w = canvas.width, h = canvas.height, L = NMF.layer, gl = NMF.gl;
+  if (L.width !== w || L.height !== h) { L.width = w; L.height = h; }
+  const g = L.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
+  const m = main.getTransform(); g.setTransform(m);
+  ctx = g; try { fn(); } finally { ctx = main; }
+  if (NMF.cv.width !== w || NMF.cv.height !== h) { NMF.cv.width = w; NMF.cv.height = h; gl.viewport(0, 0, w, h); }
+  gl.bindTexture(gl.TEXTURE_2D, NMF.tex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, L);
+  const sc = Math.hypot(m.a, m.b) || 1, ls = nmLights(), Lf = new Float32Array(NM.MAXL * 4), Cf = new Float32Array(NM.MAXL * 3);
+  ls.forEach((l, i) => { Lf.set([m.a * l[0] + m.c * l[1] + m.e, m.b * l[0] + m.d * l[1] + m.f, l[2] * sc, l[3] * sc], i * 4); Cf.set([l[4] * 1.5, l[5] * 1.5, l[6] * 1.5], i * 3); }); // figures catch a bit more light than walls
+  gl.uniform4fv(NMF.u('L'), Lf); gl.uniform3fv(NMF.u('C'), Cf); gl.uniform1i(NMF.u('n'), ls.length);
+  gl.uniform2f(NMF.u('size'), w, h); const st = Math.max(1, sc * 0.7); gl.uniform2f(NMF.u('tx'), st / w, st / h);
+  gl.uniform1f(NMF.u('amb'), 0.78); gl.uniform1f(NMF.u('kn'), 4.0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  main.save(); main.setTransform(1, 0, 0, 1, 0, 0); main.globalAlpha = 1; main.drawImage(NMF.cv, 0, 0); main.restore();
 }
 function drawBackground() {
   buildStatic();
@@ -3925,9 +3985,7 @@ function render() {
   drawMotes();
   drawLamps();
   drawCables();
-  drawTiles();
-  drawBurners();
-  drawCards();
+  litLayer(() => { drawTiles(); drawBurners(); drawCards(); });
   drawLaserTiles();
   drawLights();
   drawBridges();
@@ -3937,11 +3995,11 @@ function render() {
   drawTrail();
   drawGravBeams();
   drawGunRays();
-  for (let i = bodies.length - 1; i >= 0; i--) {
+  litLayer(() => { for (let i = bodies.length - 1; i >= 0; i--) {
     const shield = bodies[i] === player && player.spawnT > 0; // respawn protection: the figure flickers
     if (shield) ctx.globalAlpha = Math.sin(time * 28) > 0 ? 0.85 : 0.35;
     drawBody(bodies[i]); ctx.globalAlpha = 1;
-  }
+  } });
   for (const p of [portals.blue, portals.orange]) if (p) drawPortalRim(p);
   for (const bm of beams) {
     ctx.globalAlpha = bm.life / 0.16; ctx.strokeStyle = bm.color; ctx.lineWidth = bm.w || 2;
