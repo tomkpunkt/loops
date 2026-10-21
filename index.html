@@ -1697,7 +1697,7 @@ function turretRays(t) {
     const r = traceRay(sx, sy, t.face, 0, t); r.from = { x: sx, y: sy }; return r;
   });
 }
-const turretTarget = (t, w, ri) => !!w && (w.kind === 'player' || w.kind === 'echo' || (w.kind === 'turret' && w.alive && !ri)); // only the main sight line spots other turrets
+const turretTarget = (t, w, ri) => !!w && ((w.kind === 'player' && !(w.spawnT > 0)) || w.kind === 'echo' || (w.kind === 'turret' && w.alive && !ri)); // only the main sight line spots other turrets
 function disableTurret(t) {
   if (!t.alive) return;
   t.alive = false; t.charge = 0; t.segs = [];
@@ -1921,6 +1921,7 @@ let rewindFx = 0;
 const PLATFORM = (typeof window !== 'undefined' && window.loopsPlatform) || null;
 const ACT_END = { 15: 'ACT_1', 31: 'ACT_2', 47: 'ACT_3', 66: 'ACT_4', 82: 'ACT_5' };
 function achieve(id) { try { if (PLATFORM && PLATFORM.achieve) PLATFORM.achieve(id); } catch (e) {} }
+const SPAWN_GRACE = 1.6;
 function die(cause) {
   recording = null;
   for (const c of cards) if (c.got && c.by === 'player') { c.got = false; c.t = 0; cardsLeft++; } // cards you carry fall back to their spot
@@ -1929,6 +1930,7 @@ function die(cause) {
   for (const t of bodies) if (t.kind === 'turret') { t.charge = 0; t.cool = 0; t.lost = 0; }
   burst(player.x, player.y, '#b8ff6a', 22);
   player.x = player.sx; player.y = player.sy; player.vx = player.vy = 0; player.vang = 0;
+  player.spawnT = SPAWN_GRACE; // a respawn into an active laser or a turret's view is never an instant second death
   deathFlash = 0.35; trail = [];
   stats.deaths++; lvStat(li).d++; saveStats(); shake(4, 0.2); hintTick('d');
   if (stats.deaths >= 100) achieve('STUBBORN');
@@ -1963,6 +1965,7 @@ function step(dt) {
   updateCine(dt);
   if (state === 'play') {
     stats.time += dt; lvStat(li).t += dt; hintTick('t', dt);
+    if (player.spawnT > 0) player.spawnT = Math.max(0, player.spawnT - dt);
     const busy = Math.abs(player.vx) > 15 || Math.abs(player.vy) > 30 || recording || subtitle;
     idleT = busy ? Math.min(idleT, 0) : idleT + dt;
     if (idleT > 28) { say(pickTxt('IDLE'), 2.2); idleT = -45; }
@@ -2092,7 +2095,7 @@ function step(dt) {
   pressed = btnGroups.length > 0 && btnGroups.some(g => g.on);
   const wasPowered = receivers.map(r => r.on);
   const hurt = traceLasers();
-  if (hurt && state === 'play') { burst(player.x, player.y, '#ff4d4d', 18); die(); }
+  if (hurt && state === 'play' && !(player.spawnT > 0)) { burst(player.x, player.y, '#ff4d4d', 18); die(); }
   updateTurrets(dt);
   receivers.forEach((r, i) => { if (r.on && !wasPowered[i]) { for (const [x, y] of r.cells) burst(x * T + T / 2, y * T + T / 2, '#7be08a', 6); Snd.power(); } });
   for (const l of lasers) if (l.end !== 'none' && Math.random() < 0.5)
@@ -3807,7 +3810,11 @@ function render() {
   drawTrail();
   drawGravBeams();
   drawGunRays();
-  for (let i = bodies.length - 1; i >= 0; i--) drawBody(bodies[i]);
+  for (let i = bodies.length - 1; i >= 0; i--) {
+    const shield = bodies[i] === player && player.spawnT > 0; // respawn protection: the figure flickers
+    if (shield) ctx.globalAlpha = Math.sin(time * 28) > 0 ? 0.85 : 0.35;
+    drawBody(bodies[i]); ctx.globalAlpha = 1;
+  }
   for (const p of [portals.blue, portals.orange]) if (p) drawPortalRim(p);
   for (const bm of beams) {
     ctx.globalAlpha = bm.life / 0.16; ctx.strokeStyle = bm.color; ctx.lineWidth = bm.w || 2;
