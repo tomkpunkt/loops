@@ -2937,10 +2937,10 @@ function drawBodyShape(b) {
     if (!b.alive) { ctx.translate(0, 3); ctx.rotate(f * 0.4); }
     // heavy tripod
     ctx.strokeStyle = '#151b21'; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-2, 5); ctx.lineTo(-8, 13); ctx.moveTo(2, 5); ctx.lineTo(8, 13); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-2, 5); ctx.lineTo(-6, 13); ctx.moveTo(2, 5); ctx.lineTo(6, 13); ctx.stroke();
     ctx.strokeStyle = '#4a5765'; ctx.lineWidth = 1.6;
-    ctx.beginPath(); ctx.moveTo(-2, 5); ctx.lineTo(-8, 13); ctx.moveTo(2, 5); ctx.lineTo(8, 13); ctx.moveTo(0, 5); ctx.lineTo(0, 13); ctx.stroke();
-    ctx.fillStyle = '#2b333d'; ctx.fillRect(-9.5, 12, 4, 2); ctx.fillRect(5.5, 12, 4, 2);
+    ctx.beginPath(); ctx.moveTo(-2, 5); ctx.lineTo(-6, 13); ctx.moveTo(2, 5); ctx.lineTo(6, 13); ctx.moveTo(0, 5); ctx.lineTo(0, 13); ctx.stroke();
+    ctx.fillStyle = '#2b333d'; ctx.fillRect(-8, 12, 4, 2); ctx.fillRect(4, 12, 4, 2);
     // neck joint
     ctx.fillStyle = '#20272f'; ctx.fillRect(-3, 2, 6, 5);
     // angular gunmetal head
@@ -2955,8 +2955,8 @@ function drawBodyShape(b) {
     for (let i = -10; i < 10; i += 4) { ctx.beginPath(); ctx.moveTo(i, 1.4); ctx.lineTo(i + 2, 1.4); ctx.lineTo(i + 4, -2); ctx.lineTo(i + 2, -2); ctx.fill(); }
     ctx.restore();
     // twin barrels on the facing side
-    ctx.fillStyle = '#1b2229'; ctx.fillRect(f > 0 ? 6 : -12, -8, 6, 2.2); ctx.fillRect(f > 0 ? 6 : -12, -4.5, 6, 2.2);
-    ctx.fillStyle = k > 0.6 ? '#ff8a5a' : '#2f3943'; ctx.fillRect(f > 0 ? 11 : -12, -8, 1, 2.2); ctx.fillRect(f > 0 ? 11 : -12, -4.5, 1, 2.2);
+    ctx.fillStyle = '#1b2229'; ctx.fillRect(f > 0 ? 3 : -8, -8, 5, 2.2); ctx.fillRect(f > 0 ? 3 : -8, -4.5, 5, 2.2);
+    ctx.fillStyle = k > 0.6 ? '#ff8a5a' : '#2f3943'; ctx.fillRect(f > 0 ? 7 : -8, -8, 1, 2.2); ctx.fillRect(f > 0 ? 7 : -8, -4.5, 1, 2.2);
     // antenna
     ctx.strokeStyle = '#2b333d'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-f * 4, -13); ctx.lineTo(-f * 6, -18); ctx.stroke();
     ctx.fillStyle = b.alive && power ? (Math.sin(time * 6) > 0 ? '#ff4a3a' : '#5a1a16') : '#2b333d'; ctx.fillRect(-f * 6 - 1, -19.5, 2, 2);
@@ -3295,6 +3295,7 @@ function scanHit(t, ox, oy, dx, dy, noActors) {
       tmin = Math.max(tmin, ta); tmax = Math.min(tmax, tb);
     }
     if (tmin <= tmax && tmin > 2 && tmin < best) best = tmin;
+    else if (tmin <= tmax && tmin <= 2 && tmax > 2) best = Math.max(0, tmin); // something pressed right against the eye blocks the view
   }
   return { x: ox + dx * best, y: oy + dy * best, hitWall: !!wall };
 }
