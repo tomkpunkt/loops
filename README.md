@@ -21,7 +21,7 @@ Das ganze Spiel steckt in einer einzigen Datei, `index.html`, ohne Abhängigkeit
 | | Tastatur & Maus | Touch | Gamepad |
 |---|---|---|---|
 | Laufen | A / D | linker Stick | linker Stick |
-| Springen | W / Leertaste | „Sprung“ oder Stick nach oben | A |
+| Springen | W / Leertaste | „Sprung“ (optional Stick nach oben) | A |
 | Blaues / oranges Portal | Links- / Rechtsklick | Portal-Tasten + rechter Stick | LB/LT · RB/RT |
 | Pause-Menü | Esc | – | Start |
 | Neu starten | R | ↻ | Select |
@@ -71,7 +71,7 @@ The whole game is a single file, `index.html`, with no dependencies and no build
 | | Keyboard & mouse | Touch | Gamepad |
 |---|---|---|---|
 | Move | A / D | left stick | left stick |
-| Jump | W / Space | "Jump" or push stick up | A |
+| Jump | W / Space | "Jump" (optionally push stick up) | A |
 | Blue / orange portal | left / right click | portal buttons + right stick | LB/LT · RB/RT |
 | Pause menu | Esc | – | Start |
 | Restart | R | ↻ | Select |

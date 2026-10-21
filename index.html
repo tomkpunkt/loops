@@ -267,7 +267,7 @@ const FORMANTS = { A: [730, 1090, 2440], E: [530, 1840, 2480], I: [270, 2290, 30
 // The test supervisor's voice: one config line, as in the paper
 const VOICE = { pitch: 168, tract: 1.12, breath: 0.07, jitter: 0.015, wobbleHz: 0 };
 // ---------- player settings ----------
-const SETTINGS = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem('loops-settings')) || {}; } catch (e) {} return Object.assign({ music: 0.8, sfx: 0.8, voice: 0.8, calm: false, stickJump: true, light: false }, o); })();
+const SETTINGS = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem('loops-settings')) || {}; } catch (e) {} return Object.assign({ music: 0.8, sfx: 0.8, voice: 0.8, calm: false, stickJump: false, light: false }, o); })();
 function saveSettings() { try { localStorage.setItem('loops-settings', JSON.stringify(SETTINGS)); } catch (e) {} }
 // ---------- sound (synthesized, starts after first interaction) ----------
 const Snd = (() => {
