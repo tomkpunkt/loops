@@ -38,6 +38,7 @@ Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu. Sobald ein Con
 - Hinweise in drei Stufen, die erst nach Toden, Zeit oder vielen Versuchen freigegeben werden
 - Ironman-Modus nach dem ersten Durchgang: alle Kammern am Stück mit Timer, 3 Marken, kein Neustart
 - Prozedural gezeichnete Grafik im Pixel-Industriestil, Partikel und Licht
+- Optional dynamische Beleuchtung: prozedurale Normal-Map und Licht pro Pixel (WebGL)
 - Prozedurale „Mumble“-Sprachausgabe der Testleitung (WebAudio)
 - Titel, Intro und Outro mit Pixel-Zoom
 - Deutsch und Englisch (automatisch nach Gerätesprache, umschaltbar in den Optionen)
@@ -87,6 +88,7 @@ More abilities and buttons unlock as you play. As soon as a controller is detect
 - Hints in three stages that are only released after deaths, time or many attempts
 - Ironman mode after your first completion: every chamber in one go with a timer, 3 tokens, no restarts
 - Procedurally drawn industrial pixel-style art, particles and lighting
+- Optional dynamic lighting: procedural normal map and per-pixel light (WebGL)
 - Procedural "mumble" voice for Test Control (WebAudio)
 - Title, intro and outro with pixelated zoom
 - German and English (auto-detected from device language, switchable in the options)

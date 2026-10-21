@@ -228,6 +228,7 @@ body.iron .ironnote{display:block}
           <label><span data-t="sSfx"></span><input type="range" min="0" max="1" step="0.05" data-vol="sfx"></label>
           <label><span data-t="sVoice"></span><input type="range" min="0" max="1" step="0.05" data-vol="voice"></label>
           <label class="chk"><input type="checkbox" id="jumpChk"><span data-t="sStickJump"></span></label>
+          <label class="chk"><input type="checkbox" id="lightChk"><span data-t="sLight"></span></label>
           <label class="chk"><input type="checkbox" id="calmChk"><span data-t="sCalm"></span></label>
         </div>
         <h3 data-t="hIron"></h3>
@@ -266,7 +267,7 @@ const FORMANTS = { A: [730, 1090, 2440], E: [530, 1840, 2480], I: [270, 2290, 30
 // The test supervisor's voice: one config line, as in the paper
 const VOICE = { pitch: 168, tract: 1.12, breath: 0.07, jitter: 0.015, wobbleHz: 0 };
 // ---------- player settings ----------
-const SETTINGS = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem('loops-settings')) || {}; } catch (e) {} return Object.assign({ music: 0.8, sfx: 0.8, voice: 0.8, calm: false, stickJump: true }, o); })();
+const SETTINGS = (() => { let o = {}; try { o = JSON.parse(localStorage.getItem('loops-settings')) || {}; } catch (e) {} return Object.assign({ music: 0.8, sfx: 0.8, voice: 0.8, calm: false, stickJump: true, light: false }, o); })();
 function saveSettings() { try { localStorage.setItem('loops-settings', JSON.stringify(SETTINGS)); } catch (e) {} }
 // ---------- sound (synthesized, starts after first interaction) ----------
 const Snd = (() => {
@@ -734,7 +735,7 @@ const TXT = {
     HINT2: ['Neuer Hinweis verfügbar. Wir haben lange überlegt. Nicht über die Kammer, über Sie.', { t: 'Die Anlage hat Mitleid. Ein Hinweis liegt bereit. Fragezeichen oben rechts.', needs: 'hud' }, 'Hinweis freigegeben. Bitte nicht als Kritik verstehen. Es ist Kritik.', 'Ihre Testwerte haben einen Hinweis ausgelöst. Herzlichen Glückwunsch.'],
     HINT3: ['Letzter Hinweis freigegeben. Danach können wir nur noch für Sie beten.', { t: 'Wir haben die Lösung aufgeschrieben. In großen Buchstaben. Fragezeichen oben rechts.', needs: 'hud' }, 'Der finale Hinweis ist da. Die Kammer schämt sich ein wenig mit.', 'Komplettlösung bereitgestellt. Die Statistik weint leise.'],
     hHint: 'Hinweis', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
-    hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
+    hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sLight: 'Dynamische Beleuchtung (Licht auf Kanten und Metall)', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     padnote: 'Controller: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start Pause, Select neu starten.',
@@ -799,7 +800,7 @@ const TXT = {
     HINT2: ['New hint available. We thought about it for a long time. Not about the chamber, about you.', { t: 'The facility feels pity. A hint is ready. Question mark, top right.', needs: 'hud' }, 'Hint released. Please do not take it as criticism. It is criticism.', 'Your test results have triggered a hint. Congratulations.'],
     HINT3: ['Final hint released. After this, we can only pray for you.', { t: 'We have written down the answer. In large letters. Question mark, top right.', needs: 'hud' }, 'The final hint is here. The chamber is a little embarrassed too.', 'Full solution provided. The statistics are quietly weeping.'],
     hHint: 'Hint', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
-    hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
+    hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sLight: 'Dynamic lighting (light on edges and metal)', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     padnote: 'Controller: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start pause, Select restart.',
@@ -2414,9 +2415,134 @@ function emergencyGlow(l, a) {
   glowDot(l.led[0], l.led[1] + 2, 26, `rgba(255,60,40,${0.35 * p})`, a);
   glowDot(l.led[0], l.led[1], 9, `rgba(255,90,70,${0.8 * p})`, a);
 }
+
+// ---------- lighting prototype: procedural normal map for the static layer + per-pixel lights (WebGL) ----------
+// The static art is drawn with light from the top left, so its brightness already describes the relief.
+// Height = blurred brightness + a raised block for every solid cell with soft edges; normals come from that height.
+const NM = { on: !!SETTINGS.light, gl: null, cv: null, key: '', prog: null, tex: [], lightCv: null, nrmCv: null, S: 2, MAXL: 20 };
+function nmBuildMaps() {
+  const S = NM.S, w = W * S, h = H * S;
+  const src = document.createElement('canvas'); src.width = w; src.height = h;
+  const sg = src.getContext('2d'); sg.drawImage(staticCv, 0, 0, w, h);
+  const px = sg.getImageData(0, 0, w, h).data;
+  // brightness, lightly blurred
+  const lum = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) lum[i] = (px[i * 4] * 0.3 + px[i * 4 + 1] * 0.59 + px[i * 4 + 2] * 0.11) / 255;
+  const blur = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    blur[i] = (lum[i] * 4 + lum[i - 1] + lum[i + 1] + lum[i - w] + lum[i + w]) / 8;
+  }
+  // geometry: solid cells are raised; the edge falls off over a few pixels
+  const solid = (cx, cy) => { const c = charAt(cx, cy); return c === '#' || c === 'W' || c === 'Z' || !!EMIT[c] || !!BRIDGE[c] || c === 'R' || c === 'r'; };
+  const hgt = new Float32Array(w * h), ramp = 5 * S / 2;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const gx = x / S, gy = y / S, cx = Math.floor(gx / T), cy = Math.floor(gy / T);
+    let g = 0;
+    if (solid(cx, cy)) {
+      const fx = gx - cx * T, fy = gy - cy * T; let d = 99;
+      if (!solid(cx - 1, cy)) d = Math.min(d, fx); if (!solid(cx + 1, cy)) d = Math.min(d, T - fx);
+      if (!solid(cx, cy - 1)) d = Math.min(d, fy); if (!solid(cx, cy + 1)) d = Math.min(d, T - fy);
+      g = 0.55 * Math.min(1, d / ramp);
+    }
+    hgt[y * w + x] = g + blur[y * w + x] * 0.55;
+  }
+  // normals from the height field (Sobel), packed into RGB
+  const out = sg.createImageData(w, h), o = out.data, k = 3.2;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const H_ = (xx, yy) => hgt[Math.min(h - 1, Math.max(0, yy)) * w + Math.min(w - 1, Math.max(0, xx))];
+    const dx = (H_(x + 1, y - 1) + 2 * H_(x + 1, y) + H_(x + 1, y + 1)) - (H_(x - 1, y - 1) + 2 * H_(x - 1, y) + H_(x - 1, y + 1));
+    const dy = (H_(x - 1, y + 1) + 2 * H_(x, y + 1) + H_(x + 1, y + 1)) - (H_(x - 1, y - 1) + 2 * H_(x, y - 1) + H_(x + 1, y - 1));
+    let nx = -dx * k, ny = -dy * k, nz = 1; const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+    const i = (y * w + x) * 4; o[i] = (nx * 0.5 + 0.5) * 255; o[i + 1] = (ny * 0.5 + 0.5) * 255; o[i + 2] = (nz * 0.5 + 0.5) * 255; o[i + 3] = 255;
+  }
+  const nc = document.createElement('canvas'); nc.width = w; nc.height = h; nc.getContext('2d').putImageData(out, 0, 0);
+  NM.nrmCv = nc; NM.albCv = src;
+}
+function nmInit() {
+  if (NM.gl !== null) return !!NM.gl;
+  const cv = document.createElement('canvas');
+  const gl = cv.getContext('webgl', { premultipliedAlpha: false, preserveDrawingBuffer: true });
+  if (!gl) { NM.gl = false; return false; }
+  const vs = `attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1.0); }`;
+  const fs = `precision mediump float;
+    varying vec2 uv; uniform sampler2D alb, nrm; uniform vec2 size; uniform float amb, lightOnly;
+    uniform vec4 L[${NM.MAXL}]; uniform vec3 C[${NM.MAXL}]; uniform int n;
+    void main(){
+      vec3 a = texture2D(alb, uv).rgb; vec3 N = normalize(texture2D(nrm, uv).rgb * 2.0 - 1.0);
+      vec2 P = uv * size; vec3 sum = vec3(0.0); vec3 spec = vec3(0.0);
+      for (int i = 0; i < ${NM.MAXL}; i++) { if (i >= n) break;
+        vec3 d = vec3(L[i].xy - P, L[i].z); float dist = length(d.xy); vec3 Ld = normalize(d);
+        float att = clamp(1.0 - dist / L[i].w, 0.0, 1.0); att *= att;
+        float df = max(dot(N, Ld), 0.0);
+        sum += C[i] * df * att;
+        vec3 H = normalize(Ld + vec3(0.0, 0.0, 1.0));
+        spec += C[i] * pow(max(dot(N, H), 0.0), 20.0) * att * 0.9;
+      }
+      vec3 lit = lightOnly > 0.5 ? (a * sum * 1.4 + spec) : (a * (amb + sum) + spec);
+      gl_FragColor = vec4(lit, 1.0);
+    }`;
+  const sh = (t, src) => { const x = gl.createShader(t); gl.shaderSource(x, src); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); return x; };
+  try {
+    const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr); gl.useProgram(pr);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    NM.prog = pr; NM.gl = gl; NM.cv = cv;
+    NM.u = n => gl.getUniformLocation(pr, n);
+    NM.tex = [gl.createTexture(), gl.createTexture()];
+  } catch (e) { console.warn('lighting off:', e); NM.gl = false; return false; }
+  return true;
+}
+function nmUpload() {
+  const gl = NM.gl, w = W * NM.S, h = H * NM.S;
+  NM.cv.width = w; NM.cv.height = h; gl.viewport(0, 0, w, h);
+  [NM.albCv, NM.nrmCv].forEach((c, i) => {
+    gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, NM.tex[i]);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, c);
+  });
+  gl.uniform1i(NM.u('alb'), 0); gl.uniform1i(NM.u('nrm'), 1);
+}
+// every light the chamber has right now, in game pixels: [x, y, height, radius, r, g, b]
+function nmLights() {
+  const out = [], add = (x, y, z, rad, r, g, b, k) => { if (k > 0.01) out.push([x, y, z, rad, r * k, g * k, b * k]); };
+  const rgb = s => s.split(',').map(v => +v / 255);
+  for (const l of getLamps()) {
+    const v = lampLevel(l), [r, g, b] = rgb(l.col);
+    if (v > 0) add(l.px, l.py + 6, 30, 230, r, g, b, 0.85 * v);
+    else if (!power) add(l.led[0], l.led[1] + 4, 18, 150, 1, 0.16, 0.12, 0.9 * (0.7 + 0.3 * Math.sin(time * 2.4 + l.ph)));
+  }
+  for (const p of [portals.blue, portals.orange]) if (p) { const [r, g, b] = p.color === 'blue' ? [0.23, 0.61, 1] : [1, 0.55, 0.16]; add(p.c.x + p.n.x * 10, p.c.y + p.n.y * 10, 20, 170, r, g, b, 1.1 * (p.open || 1)); }
+  if (power) for (const sg of lasers) { const len = Math.hypot(sg.x2 - sg.x1, sg.y2 - sg.y1), n = Math.max(1, Math.round(len / 70));
+    for (let i = 0; i <= n; i++) add(sg.x1 + (sg.x2 - sg.x1) * i / n, sg.y1 + (sg.y2 - sg.y1) * i / n, 14, 80, 1, 0.25, 0.2, 0.55); }
+  for (const [fx, fy] of fireCells) add(fx * T + T / 2, fy * T + 12, 22, 150, 1, 0.55, 0.2, 0.9 + 0.2 * Math.sin(time * 17 + fx * 3));
+  if (power) for (let i = 0; i < zapCells.length; i += 2) { const [zx, zy] = zapCells[i]; add(zx * T + T, zy * T, 12, 90, 0.35, 0.65, 1, 0.45); }
+  for (const [ex, ey] of exitCells) add(ex * T + T / 2, ey * T + T / 2, 16, 90, 0.48, 0.88, 0.54, 0.5);
+  add(player.x, player.y - 8, 26, 120, 1, 0.85, 0.65, 0.22 + 0.45 * darkA);
+  // nearest and strongest first, the shader takes a fixed number
+  const cx = player.x, cy = player.y;
+  out.sort((a, b) => (Math.hypot(a[0] - cx, a[1] - cy) / (a[4] + a[5] + a[6] + 0.1)) - (Math.hypot(b[0] - cx, b[1] - cy) / (b[4] + b[5] + b[6] + 0.1)));
+  return out.slice(0, NM.MAXL);
+}
+function nmRender(lightOnly) {
+  const gl = NM.gl, S = NM.S, ls = nmLights(), Lf = new Float32Array(NM.MAXL * 4), Cf = new Float32Array(NM.MAXL * 3);
+  ls.forEach((l, i) => { Lf.set([l[0] * S, l[1] * S, l[2] * S, l[3] * S], i * 4); Cf.set([l[4], l[5], l[6]], i * 3); });
+  gl.uniform4fv(NM.u('L'), Lf); gl.uniform3fv(NM.u('C'), Cf); gl.uniform1i(NM.u('n'), ls.length);
+  gl.uniform2f(NM.u('size'), W * S, H * S); gl.uniform1f(NM.u('amb'), 0.74); gl.uniform1f(NM.u('lightOnly'), lightOnly ? 1 : 0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  return NM.cv;
+}
+function nmReady() {
+  if (!NM.on || !nmInit()) return false;
+  const key = staticKey + ':' + li;
+  if (NM.key !== key) { NM.key = key; nmBuildMaps(); nmUpload(); }
+  return true;
+}
 function drawBackground() {
   buildStatic();
-  ctx.drawImage(staticCv, 0, 0, W, H);
+  if (nmReady()) ctx.drawImage(nmRender(false), 0, 0, W, H);
+  else ctx.drawImage(staticCv, 0, 0, W, H);
 }
 
 function drawTiles() {
@@ -2701,6 +2827,7 @@ function drawDark() {
   for (const r of receivers) for (const [rx, ry] of r.cells) hole(rx * T + T / 2, ry * T + T / 2, 20, 0.25);
   for (const l of getLamps()) hole(l.led[0], l.led[1] + 10, 54, 0.3);
   ctx.drawImage(darkCv, 0, 0, W, H);
+  if (NM.on && NM.gl) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.85 * darkA; ctx.drawImage(nmRender(true), 0, 0, W, H); ctx.restore(); }
   // faint contours of the walls so the room stays readable
   if (!edgeCache || edgeCache.li !== li || edgeCache.g !== grid) {
     const segs = [], sol = (cx, cy) => { const c = charAt(cx, cy); return c === '#' || c === 'W' || c === 'G' || c === 'Z'; };
@@ -4402,6 +4529,8 @@ document.querySelectorAll('[data-vol]').forEach(inp => {
 });
 $('jumpChk').checked = SETTINGS.stickJump; applyStickJump();
 $('jumpChk').addEventListener('change', e => { SETTINGS.stickJump = e.target.checked; saveSettings(); held.stick = false; applyStickJump(); });
+$('lightChk').checked = !!SETTINGS.light;
+$('lightChk').addEventListener('change', e => { SETTINGS.light = e.target.checked; saveSettings(); NM.on = SETTINGS.light; });
 $('calmChk').checked = SETTINGS.calm;
 $('calmChk').addEventListener('change', e => { SETTINGS.calm = e.target.checked; saveSettings(); if (SETTINGS.calm) { flicker = 0; shakeT = 0; } });
 applyLang();
