@@ -36,6 +36,7 @@ Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu. Sobald ein Con
 - Echo, Gravitationskanone und Turrets, später Schlüsselkarten, Stacheln, Flammen, Starkstrom und Stromausfälle im Dunkeln
 - 100 Kammern in sechs Akten, viele davon mit mehreren Teilrätseln
 - Hinweise in drei Stufen, die erst nach Toden, Zeit oder vielen Versuchen freigegeben werden
+- Ironman-Modus nach dem ersten Durchgang: alle Kammern am Stück mit Timer, 3 Marken, kein Neustart
 - Prozedural gezeichnete Grafik im Pixel-Industriestil, Partikel und Licht
 - Prozedurale „Mumble“-Sprachausgabe der Testleitung (WebAudio)
 - Titel, Intro und Outro mit Pixel-Zoom
@@ -80,6 +81,7 @@ More abilities and buttons unlock as you play. As soon as a controller is detect
 - Echo, gravity gun and turrets, later key cards, spikes, flames, live floors and power failures in the dark
 - 100 chambers in six acts, many of them with several puzzles in one
 - Hints in three stages that are only released after deaths, time or many attempts
+- Ironman mode after your first completion: every chamber in one go with a timer, 3 tokens, no restarts
 - Procedurally drawn industrial pixel-style art, particles and lighting
 - Procedural "mumble" voice for Test Control (WebAudio)
 - Title, intro and outro with pixelated zoom

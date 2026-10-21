@@ -44,6 +44,7 @@ Das Spiel meldet diese IDs. Sie müssen im Steamworks-Partnerbereich unter *Stat
 | `ACT_4` | Unter Beobachtung / Under Observation | Akt 4 abgeschlossen. Die Turrets lassen grüßen. / Act 4 complete. The turrets send their regards. | Kammer 67 |
 | `ACT_5` | Notbeleuchtung / Emergency Lighting | Akt 5 abgeschlossen. / Act 5 complete. | Kammer 83 |
 | `FINISH` | Willkommen zuhause / Welcome Home | Alle Kammern bestanden. Bitte warten Sie hier. / All chambers passed. Please wait here. | Kammer 100 |
+| `IRONMAN` | Eiserne Nerven / Nerves of Steel | Ironman-Lauf ohne übersprungene Kammer. / Ironman run without a skipped chamber. | Ironman 100/100 |
 | `STUBBORN` | Lernresistent / Slow Learner | 100 Mal gestorben. Wir zählen mit. / Died 100 times. We are counting. | 100 Tode |
 
 Neue Erfolge: im Spiel `achieve('ID')` aufrufen und die ID hier und bei Steam eintragen.

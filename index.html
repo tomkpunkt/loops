@@ -138,6 +138,14 @@ body.pad canvas{cursor:none}
 .pmenu{display:grid;gap:8px;max-width:320px}
 .pmenu .btn{text-align:left;padding:10px 14px;font-size:.9rem}
 .padkeys{color:var(--muted);font-size:.75rem;margin:0}
+.ironnote{display:none;color:var(--muted);margin:0}
+body.iron #hint,body.iron #dots,body.iron [data-t=hHint],body.iron [data-t=hChambers]{display:none}
+body.iron .ironnote{display:block}
+.ironinfo{color:var(--fg);font-size:.8rem;line-height:1.55;margin:0;max-width:56ch}
+.ironinfo small{display:block;color:var(--muted);margin-top:4px}
+.ironres{display:grid;grid-template-columns:auto auto;gap:4px 18px;font-size:.9rem;max-width:300px}
+.ironres span:nth-child(odd){color:var(--muted)}
+.ironres b{font-family:var(--display);font-size:1rem}
 </style>
 
 <div class="wrap">
@@ -155,6 +163,7 @@ body.pad canvas{cursor:none}
     <div class="help" id="help" hidden>
       <div class="helpbody">
         <h2>L<span>O</span><span>O</span>PS</h2>
+        <p class="ironnote" data-t="ironNote">Im Ironman gibt es keine Hinweise und keine Kammerwahl.</p>
         <h3 data-t="hHint">Hinweis</h3>
         <div class="hints" id="hint"></div>
         <h3 data-t="hChambers">Kammern</h3>
@@ -178,12 +187,34 @@ body.pad canvas{cursor:none}
         <div class="pmenu">
           <button class="btn" type="button" id="pResume" data-t="resume">Weiterspielen</button>
           <button class="btn" type="button" id="pRestart" data-t="pRestart">Kammer neu starten</button>
+          <button class="btn" type="button" id="pGiveUp" data-t="ironGiveUp" hidden>Kammer aufgeben (kostet eine Marke)</button>
           <button class="btn" type="button" id="pHelp" data-t="pHelp">Hinweis und Kammern</button>
           <button class="btn" type="button" id="pOpts" data-t="hOpts">Optionen</button>
           <button class="btn" type="button" id="pFull" data-t="pFull">Vollbild an/aus</button>
           <button class="btn" type="button" id="pQuit" data-t="pQuit" hidden>Spiel beenden</button>
         </div>
         <p class="padkeys" data-t="padMenuKeys">Steuerkreuz wählen · A bestätigen · B zurück · Start schließen</p>
+      </div>
+    </div>
+    <div class="help" id="ironfail" hidden>
+      <div class="helpbody">
+        <h2 data-t="ironFailT">Keine Marken mehr</h2>
+        <p class="ironinfo" data-t="ironFailP">Die Anlage bietet Ihnen zwei Möglichkeiten. Beide sind unerfreulich.</p>
+        <div class="pmenu">
+          <button class="btn" type="button" id="ironSkipBtn" data-t="ironSkip">Überspringen (+60 s)</button>
+          <button class="btn" type="button" id="ironRestartBtn" data-t="ironRestart">Alles neu</button>
+        </div>
+      </div>
+    </div>
+    <div class="help" id="ironres" hidden>
+      <div class="helpbody">
+        <h2 data-t="ironResT">Ironman beendet</h2>
+        <div class="ironres" id="ironResBox"></div>
+        <p class="ironinfo" id="ironResQuip"></p>
+        <div class="pmenu">
+          <button class="btn" type="button" id="ironAgainBtn" data-t="ironAgain">Neuer Lauf</button>
+          <button class="btn" type="button" id="ironBackBtn" data-t="ironBack">Zurück</button>
+        </div>
       </div>
     </div>
     <div class="help" id="opts" hidden>
@@ -197,6 +228,9 @@ body.pad canvas{cursor:none}
           <label class="chk"><input type="checkbox" id="jumpChk"><span data-t="sStickJump">Springen per Joystick (nach oben ziehen)</span></label>
           <label class="chk"><input type="checkbox" id="calmChk"><span data-t="sCalm">Bildschirmeffekte reduzieren</span></label>
         </div>
+        <h3 data-t="hIron">Ironman</h3>
+        <p class="ironinfo" id="ironInfo"></p>
+        <div class="langs"><button class="btn" type="button" id="ironStartBtn" data-t="ironStart">Ironman-Lauf starten</button><button class="btn" type="button" id="ironGiveBtn" data-t="ironGiveUp" hidden>Kammer aufgeben</button><button class="btn" type="button" id="ironQuitBtn" data-t="ironQuit" hidden>Lauf abbrechen</button></div>
         <h3 data-t="hLang">Sprache</h3>
         <div class="langs"><button class="btn" type="button" data-lang="de" lang="de">Deutsch</button><button class="btn" type="button" data-lang="en" lang="en">English</button></div>
         <button class="btn close" id="optsClose" type="button" data-t="resume">Weiterspielen</button>
@@ -1102,6 +1136,14 @@ const TXT = {
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     padnote: 'Controller: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start Pause, Select neu starten.',
+    hIron: 'Ironman', ironStart: 'Ironman-Lauf starten', ironGiveUp: 'Kammer aufgeben (kostet eine Marke)', ironQuit: 'Lauf abbrechen',
+    ironRules: 'Alle Kammern am Stück, mit sichtbarem Timer. Kein Neustart, keine Hinweise, keine Kammerwahl, und Pausen zählen mit. Sie haben 3 Marken: Jeder Tod und jede aufgegebene Kammer kostet eine. Ohne Marken bleibt nur Überspringen (+60 s) oder alles neu. Wer die Seite neu lädt, verliert ebenfalls eine Marke.',
+    ironLocked: 'Wird nach dem ersten vollständigen Durchgang freigeschaltet.', ironBest: 'Bestleistung: {ok} von {n} Kammern in {t}', ironRunning: 'Laufender Lauf: Kammer {c}, {t}, Marken {m}',
+    ironMark: 'Eine Marke weniger. Verbleibend: {n}.', ironNoRestart: 'Im Ironman gibt es keinen Neustart. Das war Ihnen bekannt.', ironReload: 'Sie haben die Verbindung getrennt. Das zählt als Fehlversuch.',
+    ironFailT: 'Keine Marken mehr', ironFailP: 'Die Anlage bietet Ihnen zwei Möglichkeiten. Beide sind unerfreulich.', ironSkip: 'Überspringen (+60 s)', ironRestart: 'Alles neu',
+    ironResT: 'Ironman beendet', ironResOk: 'Bestanden', ironResSkip: 'Übersprungen', ironResMarks: 'Marken verbraucht', ironResTime: 'Zeit', ironNewBest: 'Neue Bestleistung.',
+    ironAgain: 'Neuer Lauf', ironBack: 'Zurück', ironNote: 'Im Ironman gibt es keine Hinweise und keine Kammerwahl.', ironGo: 'Ironman. Die Uhr läuft. Sie läuft immer.',
+    ironPerfect: 'Alle Kammern, keine Ausreden. Bemerkenswert. Das wird Konsequenzen haben.', ironDone: 'Die Anlage hat sich Notizen gemacht. Viele Notizen.',
     hPause: 'Pause', pRestart: 'Kammer neu starten', pHelp: 'Hinweis und Kammern', pFull: 'Vollbild an/aus', pQuit: 'Spiel beenden', padMenuKeys: 'Steuerkreuz wählen · A bestätigen · B zurück · Start schließen',
     resume: 'Weiterspielen', move: 'Laufen', aim: 'Zielen', blue: 'Blaues Portal', orange: 'Oranges Portal', jump: 'Sprung', echo: 'Echo', grab: 'Greifen', throw: 'Werfen'
   },
@@ -1155,6 +1197,14 @@ const TXT = {
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     padnote: 'Controller: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start pause, Select restart.',
+    hIron: 'Ironman', ironStart: 'Start Ironman run', ironGiveUp: 'Give up chamber (costs a token)', ironQuit: 'Abandon run',
+    ironRules: 'Every chamber in one go, with a visible timer. No restarts, no hints, no chamber select, and pauses count. You have 3 tokens: every death and every abandoned chamber costs one. Without tokens you can only skip (+60 s) or start over. Reloading the page also costs a token.',
+    ironLocked: 'Unlocks after your first complete run.', ironBest: 'Best: {ok} of {n} chambers in {t}', ironRunning: 'Run in progress: chamber {c}, {t}, tokens {m}',
+    ironMark: 'One token fewer. Remaining: {n}.', ironNoRestart: 'There are no restarts in Ironman. You were informed.', ironReload: 'You disconnected. That counts as a failed attempt.',
+    ironFailT: 'Out of tokens', ironFailP: 'The facility offers you two options. Both are unpleasant.', ironSkip: 'Skip (+60 s)', ironRestart: 'Start over',
+    ironResT: 'Ironman complete', ironResOk: 'Passed', ironResSkip: 'Skipped', ironResMarks: 'Tokens used', ironResTime: 'Time', ironNewBest: 'New personal best.',
+    ironAgain: 'New run', ironBack: 'Back', ironNote: 'There are no hints and no chamber select in Ironman.', ironGo: 'Ironman. The clock is running. It always is.',
+    ironPerfect: 'Every chamber, no excuses. Remarkable. There will be consequences.', ironDone: 'The facility has taken notes. Many notes.',
     hPause: 'Paused', pRestart: 'Restart chamber', pHelp: 'Hint and chambers', pFull: 'Toggle fullscreen', pQuit: 'Quit game', padMenuKeys: 'D-pad select · A confirm · B back · Start close',
     resume: 'Resume', move: 'Move', aim: 'Aim', blue: 'Blue portal', orange: 'Orange portal', jump: 'Jump', echo: 'Echo', grab: 'Grab', throw: 'Throw',
     QUIPS: ['Welcome back. The feeling of being in two places at once is normal.', 'Momentum is free. Unfortunately, so is acid.', 'The cube has no feelings. We checked.',
@@ -1292,7 +1342,7 @@ const input = { left: false, right: false, jump: false, axis: 0, padAxis: 0 };
 const held = { btn: false, stick: false, pad: false };
 const jumpHeld = () => input.jump || held.btn || held.stick || held.pad;
 function pressJump() { if (!jumpHeld()) player.jumpBuf = 0.15; }
-let unlocked = 1, debugMode = false;
+let unlocked = 1, debugMode = false, iron = null, ironReady = false;
 try { debugMode = localStorage.getItem('loops-debug') === '1'; } catch (e) {}
 try { unlocked = Math.max(1, Math.min(LEVELS.length, parseInt(localStorage.getItem('portalschleife-unlocked') || '1', 10) || 1)); } catch (e) {}
 
@@ -1352,6 +1402,7 @@ function loadLevel(i, quiet) {
   }
   bodies.unshift(player);
   echo = null; recording = null; crashT = 0;
+  if (iron && iron.on && ironReady && !quiet) { iron.li = i; iron.inCh = true; ironSave(); }
   updateHud();
 }
 
@@ -1397,6 +1448,22 @@ function overlap(a, b) {
 }
 
 // ---------- movement ----------
+// A body that slides sideways while still sunk into a portal opening would end up inside the portal's own
+// wall cells once it leaves the span: push it back out of the wall plane (or, if it is deep, back into the span).
+function portalEdgeFix(b) {
+  const pr = pair(); if (!pr) return;
+  for (const p of pr) {
+    if (inSpan(b, p)) continue;
+    const d = depth(b, p), hn = halfNorm(b, p);
+    if (d >= hn || d <= -T) continue;
+    if (Math.abs(tanCoord(b, p)) - halfTan(b, p) >= T) continue;
+    const pen = hn - d;
+    if (pen > 16) { const lim = T - halfTan(b, p); if (p.n.x !== 0) b.y = p.c.y + Math.sign(b.y - p.c.y) * lim; else b.x = p.c.x + Math.sign(b.x - p.c.x) * lim; continue; }
+    b.x += p.n.x * pen; b.y += p.n.y * pen;
+    const vn = b.vx * p.n.x + b.vy * p.n.y; if (vn < 0) { b.vx -= vn * p.n.x; b.vy -= vn * p.n.y; }
+    if (p.n.y < 0) b.onGround = true;
+  }
+}
 function moveX(b, dx, pushed) {
   if (!dx) return;
   b.x += dx;
@@ -1420,6 +1487,7 @@ function moveX(b, dx, pushed) {
     const cx = Math.floor((b.x - b.w / 2) / T);
     if (!ledge(cx)) for (let cy = y0; cy <= y1; cy++) if (solidFor(b, cx, cy)) { b.x = (cx + 1) * T + b.w / 2; b.vx = Math.max(b.vx, 0); break; }
   }
+  portalEdgeFix(b);
   for (const o of bodies) {
     if (o === b || ghostPair(b, o) || !overlap(b, o)) continue;
     if ((b.kind === 'player' || b.kind === 'echo') && o.kind === 'cube' && !pushed) {
@@ -1466,6 +1534,7 @@ function moveY(b, dy) {
       if (!fixed) { b.y = (cy + 1) * T + b.h / 2; b.vy = Math.max(b.vy, 0); }
     }
   }
+  portalEdgeFix(b);
   for (const o of bodies) {
     if (o === b || !overlap(b, o)) continue;
     if (ghostPair(b, o)) { // you and your echo only collide when one lands on the other's head
@@ -1929,6 +1998,7 @@ function die(cause) {
   stats.deaths++; lvStat(li).d++; saveStats(); shake(4, 0.2); hintTick('d');
   if (stats.deaths >= 100) achieve('STUBBORN');
   Snd.die(); say(pickTxt(cause === 'zap' ? 'DEATH_ZAP' : cause === 'spike' ? 'DEATH_SPIKE' : cause === 'fire' ? 'DEATH_FIRE' : 'DEATH'), 1.8);
+  if (iron && iron.on) ironFail(false);
 }
 
 const spikeUp = (cx, cy) => !(isSolidChar(charAt(cx, cy - 1)) && !isSolidChar(charAt(cx, cy + 1)) && charAt(cx, cy + 1) !== 'S'); // ceiling spikes hang down
@@ -2116,6 +2186,7 @@ function step(dt) {
         }
         state = 'win'; winTimer = 2.8; burst(p.x, p.y, '#7be08a', 26); Snd.win(); lvStat(li).w++; saveStats();
         if (li === 0) achieve('CHAMBER_01'); if (ACT_END[li]) achieve(ACT_END[li]); if (li === LEVELS.length - 1) achieve('FINISH');
+        if (iron && iron.on) { iron.inCh = false; ironSave(); if (li === LEVELS.length - 1) { ironFinish(); renderDots(); break; } }
         if (li === LEVELS.length - 1) { beginOutro(); renderDots(); break; }
         if (li === 47 && LEVELS[48]) { if (unlocked < 49) { unlocked = 49; try { localStorage.setItem('portalschleife-unlocked', '49'); } catch (e) {} } state = 'alarm'; cine = { kind: 'alarm', t: 0, cues: {} }; subtitle = null; renderDots(); break; }
         if (grid[cy][cx] === 'K') { gunTaken = true; state = 'gunget'; cine = { kind: 'gun', t: 0, cues: {} }; subtitle = null; }
@@ -3518,7 +3589,7 @@ function drawLyrics(y) {
 }
 function cineInput() {
   if (!cine) return false;
-  if (cine.kind === 'title' && cine.t > 0.4) { Snd.init(); beginIntro(); }
+  if (cine.kind === 'title' && cine.t > 0.4) { Snd.init(); if (iron && iron.on) ironResume(); else beginIntro(); }
   else if (cine.kind === 'intro' && cine.t > 0.4) endIntro();
   else if (cine.kind === 'outro' && cine.t > 1) toCredits();
   else if (cine.kind === 'credits' && cine.t > 1.6) startTitle();
@@ -3826,6 +3897,7 @@ function render() {
   if (flicker > 0) { const on = Math.sin(flicker * 60) > 0.3 ? 0 : 0.07; ctx.fillStyle = `rgba(0,0,0,${on})`; ctx.fillRect(0, 0, W, H); }
   drawAim();
   drawEchoHud();
+  drawIronHud();
   if (rewindFx > 0) { ctx.fillStyle = `rgba(180,140,255,${rewindFx * (SETTINGS.calm ? 0.15 : 0.5)})`; ctx.fillRect(0, 0, W, H); }
   if (state === 'crash') drawCrash();
   if (gotGun > 0) {
@@ -3869,6 +3941,7 @@ function frame(now) {
   acc += dt;
   pollPad();
   if (helpOpen) acc = 0;
+  if (iron && iron.on && ironReady) ironTick(dt);
   while (acc >= STEP) { step(STEP); acc -= STEP; }
   syncAim();
   render();
@@ -3882,7 +3955,7 @@ function renderDots() {
   LEVELS.forEach((L, i) => {
     const b = document.createElement('button');
     b.type = 'button'; b.textContent = String(i + 1).padStart(2, '0');
-    b.title = lvName(i); b.disabled = !debugMode && i + 1 > unlocked;
+    b.title = lvName(i); b.disabled = (iron && iron.on) || (!debugMode && i + 1 > unlocked);
     b.setAttribute('aria-current', i === li ? 'true' : 'false');
     b.addEventListener('click', () => { loadLevel(i); setHelp(false); });
     box.appendChild(b);
@@ -3895,6 +3968,7 @@ const hintCnt = {};
 const hintKey = i => LEVELS[i] ? LEVELS[i].name : '';
 const hintStage = i => Math.max(1, Math.min(3, hintSt[hintKey(i)] || 1));
 function hintTick(kind, v) {
+  if (iron && iron.on) return;
   if (state !== 'play' || !LEVELS[li] || !LEVELS[li].hint2) return;
   const k = hintKey(li), c = hintCnt[k] = hintCnt[k] || { d: 0, t: 0, a: 0, since: 0 };
   if (kind === 't') { c.t += v; c.since += v; } else c[kind]++;
@@ -3908,6 +3982,104 @@ function hintTick(kind, v) {
     renderHints();
   }
 }
+// ---------- Ironman: every chamber in one go, visible timer, 3 tokens, no restarts ----------
+const IRON_KEY = 'loops-ironman', IRON_BEST = 'loops-ironman-best', IRON_MARKS = 3, IRON_SKIP = 60;
+try { iron = JSON.parse(localStorage.getItem(IRON_KEY)) || null; } catch (e) { iron = null; }
+let ironBest = null; try { ironBest = JSON.parse(localStorage.getItem(IRON_BEST)) || null; } catch (e) {}
+let ironSaveT = 0;
+function ironSave() { try { localStorage.setItem(IRON_KEY, JSON.stringify(iron)); } catch (e) {} }
+function ironUnlocked() { const L = stats.levels || {}, last = L[LEVELS.length - 1]; return debugMode || !!(last && last.w > 0); }
+const ironLocked = () => panel === 'ironfail' || panel === 'ironres';
+function fmtRun(t) { const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); }
+function ironUi() {
+  const on = !!(iron && iron.on), ok = ironUnlocked();
+  document.body.classList.toggle('iron', on);
+  $('pRestart').hidden = on; $('pGiveUp').hidden = !on;
+  $('ironGiveBtn').hidden = !on; $('ironQuitBtn').hidden = !on;
+  $('ironStartBtn').disabled = !ok;
+  let txt = tr('ironRules');
+  const box = $('ironInfo'); if (!box) return;
+  box.textContent = txt;
+  const sm = document.createElement('small');
+  sm.textContent = !ok ? tr('ironLocked') : on ? tr('ironRunning').replace('{c}', String(iron.li + 1).padStart(2, '0')).replace('{t}', fmtRun(iron.t)).replace('{m}', iron.marks)
+    : ironBest ? tr('ironBest').replace('{ok}', ironBest.ok).replace('{n}', LEVELS.length).replace('{t}', fmtRun(ironBest.t)) : '';
+  if (sm.textContent) box.appendChild(sm);
+}
+function ironStart() {
+  iron = { on: true, li: 0, inCh: false, t: 0, marks: IRON_MARKS, skips: [], used: 0 };
+  ironReady = true; ironSave(); padFrom = null; setPanel(null); ironUi(); renderDots();
+  cine = null; if (typeof camReset === 'function') camReset(); visor = 1;
+  loadLevel(0); say(tr('ironGo'), 2.6);
+}
+function ironResume() { // after a page load: a chamber that was in progress counts as a failure
+  cine = null; camReset(); visor = 1; ironReady = true; ironUi(); renderDots();
+  const lost = iron.inCh;
+  loadLevel(iron.li);
+  if (lost) { say(tr('ironReload'), 3); ironFail(false); }
+}
+function ironTick(dt) {
+  if (cine || state === 'crash' || ironLocked()) return;
+  iron.t += dt; ironSaveT += dt;
+  if (ironSaveT > 1) { ironSaveT = 0; ironSave(); }
+}
+function ironFail(restartRoom) {
+  if (iron.marks > 0) {
+    iron.marks--; iron.used++; ironSave();
+    setTimeout(() => say(tr('ironMark').replace('{n}', iron.marks), 2.2), 900);
+    if (restartRoom) { const keep = iron.li; loadLevel(keep, true); iron.inCh = true; ironSave(); }
+    return;
+  }
+  ironSave(); input.left = input.right = input.jump = false;
+  padFrom = null; setPanel('ironfail'); if (padMode) padFocus(padItems()[0]);
+}
+function ironGiveUp() { if (iron && iron.on && state === 'play') ironFail(true); }
+function restartChamber() {
+  if (iron && iron.on) { say(tr('ironNoRestart'), 2.2); return; }
+  loadLevel(state === 'done' ? 0 : li);
+}
+function ironSkip() {
+  iron.t += IRON_SKIP; iron.skips.push(iron.li); iron.inCh = false; ironSave();
+  setPanel(null);
+  if (iron.li + 1 >= LEVELS.length) { ironFinish(); return; }
+  loadLevel(iron.li + 1);
+}
+function ironFinish() {
+  const n = LEVELS.length, res = { t: iron.t, ok: n - iron.skips.length, skips: iron.skips.length, used: iron.used };
+  iron.on = false; ironSave(); document.body.classList.remove('iron');
+  const better = !ironBest || res.ok > ironBest.ok || (res.ok === ironBest.ok && res.t < ironBest.t);
+  if (better) { ironBest = res; try { localStorage.setItem(IRON_BEST, JSON.stringify(res)); } catch (e) {} }
+  if (res.ok === n) achieve('IRONMAN');
+  const box = $('ironResBox'); box.innerHTML = '';
+  for (const [k, v] of [['ironResTime', fmtRun(res.t)], ['ironResOk', res.ok + ' / ' + n], ['ironResSkip', String(res.skips)], ['ironResMarks', res.used + ' / ' + IRON_MARKS]]) {
+    const a = document.createElement('span'); a.textContent = tr(k); const b = document.createElement('b'); b.textContent = v; box.appendChild(a); box.appendChild(b);
+  }
+  $('ironResQuip').textContent = (res.ok === n ? tr('ironPerfect') : tr('ironDone')) + (better ? ' ' + tr('ironNewBest') : '');
+  state = 'done'; renderDots(); setPanel('ironres'); if (padMode) padFocus(padItems()[0]);
+}
+function drawIronHud() {
+  if (!iron || !iron.on || !ironReady || cine) return;
+  ctx.save(); ctx.textBaseline = 'top'; ctx.textAlign = 'right';
+  const x = W - 8, y = 6;
+  ctx.fillStyle = 'rgba(6,9,12,0.72)'; ctx.fillRect(x - 104, y - 2, 108, 34);
+  ctx.fillStyle = '#ff8c2a'; ctx.fillRect(x - 104, y - 2, 2, 34);
+  ctx.font = '500 8px "IBM Plex Mono", monospace'; ctx.fillStyle = '#8796a4';
+  ctx.fillText(`IRONMAN · ${String(li + 1).padStart(2, '0')}/${LEVELS.length}`, x, y);
+  ctx.font = '700 15px "Chakra Petch", "Arial Narrow", sans-serif'; ctx.fillStyle = '#e3e9ee';
+  ctx.fillText(fmtRun(iron.t), x - 34, y + 12);
+  for (let i = 0; i < IRON_MARKS; i++) {
+    const cx = x - 4 - (IRON_MARKS - 1 - i) * 10, cy = y + 19, have = i < iron.marks;
+    ctx.beginPath(); ctx.moveTo(cx, cy - 4); ctx.lineTo(cx + 4, cy); ctx.lineTo(cx, cy + 4); ctx.lineTo(cx - 4, cy); ctx.closePath();
+    ctx.fillStyle = have ? '#ff8c2a' : 'rgba(135,150,164,0.35)'; ctx.fill();
+  }
+  ctx.restore();
+}
+$('ironStartBtn').addEventListener('click', () => { if (ironUnlocked()) ironStart(); });
+$('ironGiveBtn').addEventListener('click', () => { setPanel(null); ironGiveUp(); });
+$('ironQuitBtn').addEventListener('click', () => { iron.on = false; ironSave(); document.body.classList.remove('iron'); ironUi(); renderDots(); setPanel(null); loadLevel(li); });
+$('ironSkipBtn').addEventListener('click', ironSkip);
+$('ironRestartBtn').addEventListener('click', ironStart);
+$('ironAgainBtn').addEventListener('click', ironStart);
+$('ironBackBtn').addEventListener('click', () => { setPanel(null); ironUi(); loadLevel(0); });
 function renderHints() {
   const box = $('hint'); if (!box) return;
   const hs = lvHints(li), st = hintStage(li), lab = tr('hStage');
@@ -3966,7 +4138,8 @@ let helpOpen = false, panel = null;
 function setPanel(name) {
   panel = name; helpOpen = !!name;
   if (name === 'help') renderDbgStats();
-  $('help').hidden = name !== 'help'; $('opts').hidden = name !== 'opts'; $('pause').hidden = name !== 'pause';
+  $('help').hidden = name !== 'help'; $('opts').hidden = name !== 'opts'; $('pause').hidden = name !== 'pause'; $('ironfail').hidden = name !== 'ironfail'; $('ironres').hidden = name !== 'ironres';
+  if (name === 'opts' || name === 'pause') ironUi();
   padFocusClear();
   if (name === 'help') $('helpBtn').classList.remove('new');
   $('helpBtn').setAttribute('aria-expanded', String(name === 'help')); $('optsBtn').setAttribute('aria-expanded', String(name === 'opts'));
@@ -3987,7 +4160,7 @@ function dbgStatsText() {
 }
 function setHelp(on) {
   if (on) return setPanel('help');
-  panel = null; helpOpen = false; $('help').hidden = true; $('opts').hidden = true; $('pause').hidden = true; padFocusClear(); $('helpBtn').setAttribute('aria-expanded', 'false'); $('optsBtn').setAttribute('aria-expanded', 'false');
+  panel = null; helpOpen = false; $('help').hidden = true; $('opts').hidden = true; $('pause').hidden = true; $('ironfail').hidden = true; $('ironres').hidden = true; padFocusClear(); $('helpBtn').setAttribute('aria-expanded', 'false'); $('optsBtn').setAttribute('aria-expanded', 'false');
   input.left = input.right = input.jump = false; input.axis = 0;
   if (!on) canvas.focus();
 }
@@ -4058,10 +4231,11 @@ window.addEventListener('keydown', e => {
     e.preventDefault();
     if (a === 'jump') pressJump();
     input[a] = true;
-  } else if (e.code === 'Escape' && padMode) { if (panel) padBack(); else openPause(); }
+  } else if (ironLocked()) { /* a decision is required */ }
+  else if (e.code === 'Escape' && padMode) { if (panel) padBack(); else openPause(); }
   else if (e.code === 'KeyH' || e.code === 'Escape') { setPanel(e.code === 'Escape' || panel === 'help' ? null : 'help'); }
   else if (e.code === 'KeyO') { setPanel(panel === 'opts' ? null : 'opts'); }
-  else if (e.code === 'KeyR') { loadLevel(state === 'done' ? 0 : li); }
+  else if (e.code === 'KeyR') { restartChamber(); }
   else if (e.code === 'KeyQ') fire('blue', aim.x, aim.y);
   else if (e.code === 'KeyE') fire('orange', aim.x, aim.y);
   else if (e.code === 'KeyF') { e.preventDefault(); toggleEcho(); }
@@ -4185,6 +4359,7 @@ function padMove(dir) {
   if (best) padFocus(best);
 }
 function padBack() {
+  if (ironLocked()) return;
   if (panel === 'pause' || !padFrom) { padFrom = null; setPanel(null); return; }
   padFrom = null; setPanel('pause'); padFocus(padItems()[0]);
 }
@@ -4209,12 +4384,12 @@ function pollPad() {
     else if (dir && now >= padRep.t) { padRep.t = now + 110; padMove(dir); }
     if (edge(0)) { const cur = padCurrent(); if (cur) { if (cur.type !== 'range') cur.click(); } else padFocus(padItems()[0]); }
     else if (edge(1)) padBack();
-    else if (edge(9)) { padFrom = null; setPanel(null); }
+    else if (edge(9)) { if (!ironLocked()) { padFrom = null; setPanel(null); } }
     done(); return;
   }
   padRep.dir = null;
   if (edge(9)) { if (state === 'done') loadLevel(0); else openPause(); done(); return; }
-  if (edge(8)) loadLevel(state === 'done' ? 0 : li);
+  if (edge(8)) restartChamber();
   const dpad = (b(15) ? 1 : 0) - (b(14) ? 1 : 0);
   input.padAxis = Math.abs(ax) > 0.22 ? ax : dpad;
   if (b(0) && !held.pad) pressJump();
@@ -4229,7 +4404,8 @@ function pollPad() {
   done();
 }
 $('pResume').addEventListener('click', () => { padFrom = null; setPanel(null); });
-$('pRestart').addEventListener('click', () => { padFrom = null; setPanel(null); loadLevel(state === 'done' ? 0 : li); });
+$('pRestart').addEventListener('click', () => { padFrom = null; setPanel(null); restartChamber(); });
+$('pGiveUp').addEventListener('click', () => { padFrom = null; setPanel(null); ironGiveUp(); });
 $('pHelp').addEventListener('click', () => { setPanel('help'); padFrom = 'pause'; if (padMode) { const cur = document.querySelector('#dots button[aria-current="true"]'); padFocus(cur || padItems()[0]); } });
 $('pOpts').addEventListener('click', () => { setPanel('opts'); padFrom = 'pause'; if (padMode) padFocus(padItems()[0]); });
 $('pFull').addEventListener('click', () => { if (PLATFORM && PLATFORM.toggleFullscreen) PLATFORM.toggleFullscreen(); else tryFullscreen(true); });
@@ -4249,7 +4425,7 @@ $('grabBtn').addEventListener('pointerdown', e => { e.preventDefault(); Snd.init
 $('throwBtn').addEventListener('pointerdown', e => { e.preventDefault(); Snd.init(); if (aim.mode === 'none') { aim.mode = 'stick'; aim.dx = 1; aim.dy = 0; } syncAim(); gravThrow(player); });
 canvas.addEventListener('auxclick', e => { if (e.button === 1) { e.preventDefault(); gravGrab(player); } });
 $('echoBtn').addEventListener('pointerdown', e => { e.preventDefault(); Snd.init(); toggleEcho(); });
-$('restart').addEventListener('click', () => { loadLevel(state === 'done' ? 0 : li); canvas.focus(); });
+$('restart').addEventListener('click', () => { restartChamber(); canvas.focus(); });
 
 function applyLang() {
   document.documentElement.lang = LANG;
@@ -4283,6 +4459,7 @@ $('jumpChk').addEventListener('change', e => { SETTINGS.stickJump = e.target.che
 $('calmChk').checked = SETTINGS.calm;
 $('calmChk').addEventListener('change', e => { SETTINGS.calm = e.target.checked; saveSettings(); if (SETTINGS.calm) { flicker = 0; shakeT = 0; } });
 applyLang();
+ironUi();
 loadLevel(0);
 layout();
 startTitle();
