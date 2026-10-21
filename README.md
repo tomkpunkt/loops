@@ -14,6 +14,7 @@ Das ganze Spiel steckt in einer einzigen Datei, `index.html`, ohne Abhängigkeit
 
 - **Lokal:** `index.html` herunterladen und im Browser öffnen.
 - **Online:** über GitHub Pages (Settings → Pages → Branch `main`, Ordner `/`), oder die Datei bei itch.io / Netlify Drop hochladen.
+- **Desktop / Steam (Prototyp):** siehe [`desktop/`](desktop/README.md), Electron-Build mit optionaler Steam-Anbindung.
 
 ## Steuerung
 
@@ -57,6 +58,7 @@ The whole game is a single file, `index.html`, with no dependencies and no build
 
 - **Locally:** download `index.html` and open it in a browser.
 - **Online:** via GitHub Pages (Settings → Pages → branch `main`, folder `/`), or upload the file to itch.io / Netlify Drop.
+- **Desktop / Steam (prototype):** see [`desktop/`](desktop/README.md), an Electron build with optional Steam integration.
 
 ### Controls
 

@@ -1,0 +1,59 @@
+{
+  "name": "loops",
+  "productName": "Loops",
+  "version": "0.1.0",
+  "description": "Loops – The facility never sleeps. Desktop and Steam build of the browser game.",
+  "author": "tomkpunkt",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node sync.js",
+    "start": "node sync.js && electron .",
+    "start:deck": "node sync.js && electron . --deck",
+    "dist:linux": "node sync.js && electron-builder --linux",
+    "dist:win": "node sync.js && electron-builder --win",
+    "dist:mac": "node sync.js && electron-builder --mac"
+  },
+  "dependencies": {
+    "steamworks.js": "^0.4.0"
+  },
+  "devDependencies": {
+    "electron": "41.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.tomkpunkt.loops",
+    "productName": "Loops",
+    "files": [
+      "main.js",
+      "preload.js",
+      "steam.js",
+      "app/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/steamworks.js/**/*"
+    ],
+    "linux": {
+      "target": [
+        "dir",
+        "tar.gz"
+      ],
+      "category": "Game"
+    },
+    "win": {
+      "target": [
+        "dir",
+        "zip"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dir",
+        "zip"
+      ],
+      "category": "public.app-category.puzzle-games"
+    }
+  }
+}

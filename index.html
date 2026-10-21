@@ -181,6 +181,7 @@ body.pad canvas{cursor:none}
           <button class="btn" type="button" id="pHelp" data-t="pHelp">Hinweis und Kammern</button>
           <button class="btn" type="button" id="pOpts" data-t="hOpts">Optionen</button>
           <button class="btn" type="button" id="pFull" data-t="pFull">Vollbild an/aus</button>
+          <button class="btn" type="button" id="pQuit" data-t="pQuit" hidden>Spiel beenden</button>
         </div>
         <p class="padkeys" data-t="padMenuKeys">Steuerkreuz wählen · A bestätigen · B zurück · Start schließen</p>
       </div>
@@ -1101,7 +1102,7 @@ const TXT = {
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     padnote: 'Controller: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start Pause, Select neu starten.',
-    hPause: 'Pause', pRestart: 'Kammer neu starten', pHelp: 'Hinweis und Kammern', pFull: 'Vollbild an/aus', padMenuKeys: 'Steuerkreuz wählen · A bestätigen · B zurück · Start schließen',
+    hPause: 'Pause', pRestart: 'Kammer neu starten', pHelp: 'Hinweis und Kammern', pFull: 'Vollbild an/aus', pQuit: 'Spiel beenden', padMenuKeys: 'Steuerkreuz wählen · A bestätigen · B zurück · Start schließen',
     resume: 'Weiterspielen', move: 'Laufen', aim: 'Zielen', blue: 'Blaues Portal', orange: 'Oranges Portal', jump: 'Sprung', echo: 'Echo', grab: 'Greifen', throw: 'Werfen'
   },
   en: {
@@ -1154,7 +1155,7 @@ const TXT = {
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     padnote: 'Controller: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start pause, Select restart.',
-    hPause: 'Paused', pRestart: 'Restart chamber', pHelp: 'Hint and chambers', pFull: 'Toggle fullscreen', padMenuKeys: 'D-pad select · A confirm · B back · Start close',
+    hPause: 'Paused', pRestart: 'Restart chamber', pHelp: 'Hint and chambers', pFull: 'Toggle fullscreen', pQuit: 'Quit game', padMenuKeys: 'D-pad select · A confirm · B back · Start close',
     resume: 'Resume', move: 'Move', aim: 'Aim', blue: 'Blue portal', orange: 'Orange portal', jump: 'Jump', echo: 'Echo', grab: 'Grab', throw: 'Throw',
     QUIPS: ['Welcome back. The feeling of being in two places at once is normal.', 'Momentum is free. Unfortunately, so is acid.', 'The cube has no feelings. We checked.',
       'Infinite loops are expressly permitted in this facility.', 'What falls in comes out. Physics is very consistent about that.', 'Two switches. We did not miscount.',
@@ -1558,7 +1559,7 @@ function depenetrate(old) {
 function fire(color, tx, ty, actor) {
   if (state !== 'play' || LEVELS[li].portals === false) return;
   const who = actor || player;
-  if (who === player) { stats.portals++; idleT = Math.min(idleT, 0); hintTick('a'); }
+  if (who === player) { if (!stats.portals) achieve('FIRST_PORTAL'); stats.portals++; idleT = Math.min(idleT, 0); hintTick('a'); }
   const ox = who.x, oy = who.y - 3;
   let dx = tx - ox, dy = ty - oy; const L = Math.hypot(dx, dy); if (L < 2) return;
   dx /= L; dy /= L;
@@ -1912,6 +1913,10 @@ function crashLines() {
 function toggleEcho() { if (recording) stopRecording(); else startRecording(); hintTick('a'); }
 let rewindFx = 0;
 
+// ---------- platform bridge: the desktop/Steam build injects window.loopsPlatform; the browser build has none ----------
+const PLATFORM = (typeof window !== 'undefined' && window.loopsPlatform) || null;
+const ACT_END = { 15: 'ACT_1', 31: 'ACT_2', 47: 'ACT_3', 66: 'ACT_4', 82: 'ACT_5' };
+function achieve(id) { try { if (PLATFORM && PLATFORM.achieve) PLATFORM.achieve(id); } catch (e) {} }
 function die(cause) {
   recording = null;
   for (const c of cards) if (c.got && c.by === 'player') { c.got = false; c.t = 0; cardsLeft++; } // cards you carry fall back to their spot
@@ -1922,6 +1927,7 @@ function die(cause) {
   player.x = player.sx; player.y = player.sy; player.vx = player.vy = 0; player.vang = 0;
   deathFlash = 0.35; trail = [];
   stats.deaths++; lvStat(li).d++; saveStats(); shake(4, 0.2); hintTick('d');
+  if (stats.deaths >= 100) achieve('STUBBORN');
   Snd.die(); say(pickTxt(cause === 'zap' ? 'DEATH_ZAP' : cause === 'spike' ? 'DEATH_SPIKE' : cause === 'fire' ? 'DEATH_FIRE' : 'DEATH'), 1.8);
 }
 
@@ -2109,6 +2115,7 @@ function step(dt) {
           lockT = 1.5; continue;
         }
         state = 'win'; winTimer = 2.8; burst(p.x, p.y, '#7be08a', 26); Snd.win(); lvStat(li).w++; saveStats();
+        if (li === 0) achieve('CHAMBER_01'); if (ACT_END[li]) achieve(ACT_END[li]); if (li === LEVELS.length - 1) achieve('FINISH');
         if (li === LEVELS.length - 1) { beginOutro(); renderDots(); break; }
         if (li === 47 && LEVELS[48]) { if (unlocked < 49) { unlocked = 49; try { localStorage.setItem('portalschleife-unlocked', '49'); } catch (e) {} } state = 'alarm'; cine = { kind: 'alarm', t: 0, cues: {} }; subtitle = null; renderDots(); break; }
         if (grid[cy][cx] === 'K') { gunTaken = true; state = 'gunget'; cine = { kind: 'gun', t: 0, cues: {} }; subtitle = null; }
@@ -4051,7 +4058,8 @@ window.addEventListener('keydown', e => {
     e.preventDefault();
     if (a === 'jump') pressJump();
     input[a] = true;
-  } else if (e.code === 'KeyH' || e.code === 'Escape') { setPanel(e.code === 'Escape' || panel === 'help' ? null : 'help'); }
+  } else if (e.code === 'Escape' && padMode) { if (panel) padBack(); else openPause(); }
+  else if (e.code === 'KeyH' || e.code === 'Escape') { setPanel(e.code === 'Escape' || panel === 'help' ? null : 'help'); }
   else if (e.code === 'KeyO') { setPanel(panel === 'opts' ? null : 'opts'); }
   else if (e.code === 'KeyR') { loadLevel(state === 'done' ? 0 : li); }
   else if (e.code === 'KeyQ') fire('blue', aim.x, aim.y);
@@ -4123,15 +4131,17 @@ let padPrev = [];
 // ---------- controller: gameplay, pause menu and menu navigation; switches the page into a full-screen controller layout ----------
 let padMode = false, padFrom = null, padRep = { dir: null, t: 0 }, padLast = 0, fsWanted = false;
 function tryFullscreen(force) {
+  if (typeof PLATFORM !== 'undefined' && PLATFORM && PLATFORM.setFullscreen) { if (force) PLATFORM.toggleFullscreen(); else PLATFORM.setFullscreen(true); return; }
   const el = document.documentElement;
   if (document.fullscreenElement) { if (force) document.exitFullscreen().catch(() => {}); return; }
   if (!el.requestFullscreen) return;
   try { const pr = el.requestFullscreen({ navigationUI: 'hide' }); fsWanted = true; if (pr && pr.then) pr.then(() => { fsWanted = false; }, () => { fsWanted = true; }); } catch (e) { fsWanted = true; }
 }
-function setPadMode(on) {
+function setPadMode(on, noFs) {
   if (padMode === on) return;
+  if (!on && PLATFORM) return; // the desktop build always keeps the full-window layout
   padMode = on; document.body.classList.toggle('pad', on);
-  if (on) tryFullscreen(); else fsWanted = false;
+  if (on && !noFs) tryFullscreen(); else fsWanted = false;
   layout();
 }
 // any real user gesture (key, mouse) gets a second chance at full screen if the controller could not open it
@@ -4222,7 +4232,9 @@ $('pResume').addEventListener('click', () => { padFrom = null; setPanel(null); }
 $('pRestart').addEventListener('click', () => { padFrom = null; setPanel(null); loadLevel(state === 'done' ? 0 : li); });
 $('pHelp').addEventListener('click', () => { setPanel('help'); padFrom = 'pause'; if (padMode) { const cur = document.querySelector('#dots button[aria-current="true"]'); padFocus(cur || padItems()[0]); } });
 $('pOpts').addEventListener('click', () => { setPanel('opts'); padFrom = 'pause'; if (padMode) padFocus(padItems()[0]); });
-$('pFull').addEventListener('click', () => tryFullscreen(true));
+$('pFull').addEventListener('click', () => { if (PLATFORM && PLATFORM.toggleFullscreen) PLATFORM.toggleFullscreen(); else tryFullscreen(true); });
+if (PLATFORM) setPadMode(true, true); // desktop: the chamber fills the window, Esc opens the pause menu
+if (PLATFORM && PLATFORM.quit) { $('pQuit').hidden = false; $('pQuit').addEventListener('click', () => PLATFORM.quit()); }
 
 const wakeAudio = () => Snd.init();
 document.addEventListener('visibilitychange', () => {
