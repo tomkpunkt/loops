@@ -734,7 +734,7 @@ const TXT = {
     hLocked3: 'Der letzte Hinweis liegt bereit. Wir warten nur noch, bis es Ihnen ein bisschen peinlich ist.',
     HINT2: ['Neuer Hinweis verfügbar. Wir haben lange überlegt. Nicht über die Kammer, über Sie.', { t: 'Die Anlage hat Mitleid. Ein Hinweis liegt bereit. Fragezeichen oben rechts.', needs: 'hud' }, 'Hinweis freigegeben. Bitte nicht als Kritik verstehen. Es ist Kritik.', 'Ihre Testwerte haben einen Hinweis ausgelöst. Herzlichen Glückwunsch.'],
     HINT3: ['Letzter Hinweis freigegeben. Danach können wir nur noch für Sie beten.', { t: 'Wir haben die Lösung aufgeschrieben. In großen Buchstaben. Fragezeichen oben rechts.', needs: 'hud' }, 'Der finale Hinweis ist da. Die Kammer schämt sich ein wenig mit.', 'Komplettlösung bereitgestellt. Die Statistik weint leise.'],
-    hHint: 'Hinweis', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
+    hHint: 'Hinweis', echoKey: 'Taste F', echoKeyPad: 'Taste Y', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
     hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sLight: 'Dynamische Beleuchtung (Licht auf Kanten und Metall)', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
@@ -799,7 +799,7 @@ const TXT = {
     hLocked3: 'The final hint is ready. We are just waiting until it gets a little embarrassing for you.',
     HINT2: ['New hint available. We thought about it for a long time. Not about the chamber, about you.', { t: 'The facility feels pity. A hint is ready. Question mark, top right.', needs: 'hud' }, 'Hint released. Please do not take it as criticism. It is criticism.', 'Your test results have triggered a hint. Congratulations.'],
     HINT3: ['Final hint released. After this, we can only pray for you.', { t: 'We have written down the answer. In large letters. Question mark, top right.', needs: 'hud' }, 'The final hint is here. The chamber is a little embarrassed too.', 'Full solution provided. The statistics are quietly weeping.'],
-    hHint: 'Hint', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
+    hHint: 'Hint', echoKey: 'key F', echoKeyPad: 'button Y', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
     hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sLight: 'Dynamic lighting (light on edges and metal)', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
@@ -855,7 +855,7 @@ const LEVEL_TXT = {
     "Finale": { name: "Finale", quip: "Letzte Kammer. Wir haben eine Abschlussfeier geplant. Theoretisch.",
       hints: ["Die Tür will Schalter und Empfänger, und zwischen Ihnen und beidem liegt Säure. Ein Finale. Wir haben uns Mühe gegeben.", "Erst die Brücke, dann der Laser. Ein Portalpaar, zwei Einsätze, und Würfel fahren gern Brücke.", "Legen Sie die Brücke per Portal über die Säure und schieben Sie den Würfel auf den Schalter. Dann vom anderen Ufer aus die Portale neu setzen und den Laser zum Empfänger leiten."] },
     "Echo": { name: "Echo", quip: "Sie sind schon wieder da. Und auch schon wieder.",
-      hints: ["Neu: Echo. Drücken Sie „Echo“ (Taste F), gehen Sie zum Schalter und drücken Sie noch einmal. Die Zeit springt zurück, und Ihr Echo wiederholt alles, was Sie getan haben.", "Ihr Echo bleibt am Ende seiner Aufnahme stehen. Ein Echo auf einem Schalter ist ein Schalter, der gedrückt bleibt. Eine geniale Erfindung, falls Sie fragen.", "Aufnahme starten, auf den Schalter stellen, Aufnahme beenden. Während Ihr Echo dort wartet, gehen Sie selbst durch die offene Tür."] },
+      hints: ["Neu: Echo. Drücken Sie „Echo“ ({echoKey}), gehen Sie zum Schalter und drücken Sie noch einmal. Die Zeit springt zurück, und Ihr Echo wiederholt alles, was Sie getan haben.", "Ihr Echo bleibt am Ende seiner Aufnahme stehen. Ein Echo auf einem Schalter ist ein Schalter, der gedrückt bleibt. Eine geniale Erfindung, falls Sie fragen.", "Aufnahme starten, auf den Schalter stellen, Aufnahme beenden. Während Ihr Echo dort wartet, gehen Sie selbst durch die offene Tür."] },
     "Zweite Schicht": { name: "Zweite Schicht", quip: "Teamarbeit mit sich selbst. Die Personalabteilung ist begeistert.",
       hints: ["Ein Schalter liegt oben auf dem Sims, einer unten. Sie sind nur einer. Noch.", "Ihr Echo kann Portale schießen und benutzen, genau wie Sie. Es macht nur weniger Fehler, weil es Ihre schon kennt.", "Nehmen Sie den Weg per Portal hinauf auf den oberen Schalter auf. Danach kümmern Sie sich selbst um den Würfel für den unteren."] },
     "Stellvertreter": { name: "Stellvertreter", quip: "Einer muss ja die Stellung halten. Diesmal nicht Sie.",
@@ -1057,7 +1057,7 @@ const LEVEL_TXT = {
     "Finale": { name: "Finale", quip: "Final chamber. We have planned a graduation ceremony. Theoretically.",
       hints: ["The door wants switch and receiver, and acid lies between you and both. A finale. We made an effort.", "Bridge first, laser second. One portal pair, two jobs, and cubes love riding bridges.", "Lay the bridge across the acid with a portal and push the cube onto the switch. Then reset the portals from the far bank and send the laser to the receiver."] },
     "Echo": { name: "Echo", quip: "You are back again. And again.",
-      hints: ["New: Echo. Press \"Echo\" (key F), walk to the switch and press again. Time jumps back and your echo repeats everything you did.", "Your echo stays put at the end of its recording. An echo on a switch is a switch that stays pressed. A brilliant invention, in case you were wondering.", "Start recording, step onto the switch, stop recording. While your echo waits there, walk through the open door yourself."] },
+      hints: ["New: Echo. Press \"Echo\" ({echoKey}), walk to the switch and press again. Time jumps back and your echo repeats everything you did.", "Your echo stays put at the end of its recording. An echo on a switch is a switch that stays pressed. A brilliant invention, in case you were wondering.", "Start recording, step onto the switch, stop recording. While your echo waits there, walk through the open door yourself."] },
     "Zweite Schicht": { name: "Second Shift", quip: "Teamwork with yourself. HR is thrilled.",
       hints: ["One switch is up on the ledge, one down below. You are only one of you. For now.", "Your echo can fire and use portals just like you. It just makes fewer mistakes, because it already knows yours.", "Record the trip up to the upper switch by portal. After that, deal with the cube for the lower one yourself."] },
     "Stellvertreter": { name: "Stand-in", quip: "Someone has to hold the fort. Not you, this time.",
@@ -1255,8 +1255,8 @@ const pickTxt = (key, v) => {
 };
 const lvTxt = i => (LEVEL_TXT[LANG] && LEVEL_TXT[LANG][LEVELS[i].name]) || LEVEL_TXT.de[LEVELS[i].name];
 const lvName = i => lvTxt(i).name;
-const lvHints = i => lvTxt(i).hints;
-const lvHint = i => lvTxt(i).hints[0];
+const lvHints = i => lvTxt(i).hints.map(h => fill(h, { echoKey: tr(padMode ? 'echoKeyPad' : 'echoKey') }));
+const lvHint = i => lvHints(i)[0];
 const lvQuip = i => lvTxt(i).quip || '';
 
 const canvas = document.getElementById('game');
