@@ -66,6 +66,7 @@ canvas{display:block;width:100%;height:auto;max-width:100%;touch-action:none;cur
 .settings input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
 .langs .btn{padding:6px 12px}
 .langs .btn[aria-pressed="true"]{border-color:var(--blue);color:var(--fg);background:color-mix(in srgb,var(--blue) 18%,var(--panel))}
+body:not(.debug) .dbgnav{display:none!important}
 .debug #cnum::after{content:' · DEBUG';color:#ff6a5a}
 .help .close{align-self:flex-start;margin-top:4px}
 .iconbtn[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
@@ -154,6 +155,8 @@ body.iron .ironnote{display:block}
   <header class="hud">
     <div class="chamber"><small id="cnum"></small><span id="cname"></span></div>
     <div class="right">
+      <button class="btn iconbtn dbgnav" id="dbgPrev" type="button" data-aria="aPrev">‹</button>
+      <button class="btn iconbtn dbgnav" id="dbgNext" type="button" data-aria="aNext">›</button>
       <button class="btn iconbtn" id="helpBtn" type="button" data-aria="aHelp" aria-expanded="false">?</button>
       <button class="btn iconbtn" id="optsBtn" type="button" data-aria="aOpts" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <button class="btn iconbtn" id="restart" type="button" data-aria="aRestart">↻</button>
@@ -734,7 +737,7 @@ const TXT = {
     hLocked3: 'Der letzte Hinweis liegt bereit. Wir warten nur noch, bis es Ihnen ein bisschen peinlich ist.',
     HINT2: ['Neuer Hinweis verfügbar. Wir haben lange überlegt. Nicht über die Kammer, über Sie.', { t: 'Die Anlage hat Mitleid. Ein Hinweis liegt bereit. Fragezeichen oben rechts.', needs: 'hud' }, 'Hinweis freigegeben. Bitte nicht als Kritik verstehen. Es ist Kritik.', 'Ihre Testwerte haben einen Hinweis ausgelöst. Herzlichen Glückwunsch.'],
     HINT3: ['Letzter Hinweis freigegeben. Danach können wir nur noch für Sie beten.', { t: 'Wir haben die Lösung aufgeschrieben. In großen Buchstaben. Fragezeichen oben rechts.', needs: 'hud' }, 'Der finale Hinweis ist da. Die Kammer schämt sich ein wenig mit.', 'Komplettlösung bereitgestellt. Die Statistik weint leise.'],
-    hHint: 'Hinweis', echoKey: 'Taste F', echoKeyPad: 'Taste Y', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
+    hHint: 'Hinweis', echoKey: 'Taste F', aPrev: 'Vorherige Kammer (Debug)', aNext: 'Nächste Kammer (Debug)', echoKeyPad: 'Taste Y', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
     hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sLight: 'Dynamische Beleuchtung (Licht auf Kanten und Metall)', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
@@ -799,7 +802,7 @@ const TXT = {
     hLocked3: 'The final hint is ready. We are just waiting until it gets a little embarrassing for you.',
     HINT2: ['New hint available. We thought about it for a long time. Not about the chamber, about you.', { t: 'The facility feels pity. A hint is ready. Question mark, top right.', needs: 'hud' }, 'Hint released. Please do not take it as criticism. It is criticism.', 'Your test results have triggered a hint. Congratulations.'],
     HINT3: ['Final hint released. After this, we can only pray for you.', { t: 'We have written down the answer. In large letters. Question mark, top right.', needs: 'hud' }, 'The final hint is here. The chamber is a little embarrassed too.', 'Full solution provided. The statistics are quietly weeping.'],
-    hHint: 'Hint', echoKey: 'key F', echoKeyPad: 'button Y', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
+    hHint: 'Hint', echoKey: 'key F', aPrev: 'Previous chamber (debug)', aNext: 'Next chamber (debug)', echoKeyPad: 'button Y', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
     hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sLight: 'Dynamic lighting (light on edges and metal)', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
@@ -4090,6 +4093,11 @@ function renderDots() {
     box.appendChild(b);
   });
 }
+// debug: step through chambers from the toolbar (or PageUp / PageDown)
+function dbgStep(d) { if (!debugMode || (iron && iron.on)) return; const n = Math.max(0, Math.min(LEVELS.length - 1, li + d)); if (n !== li) { loadLevel(n); setHelp(false); } }
+$('dbgPrev').addEventListener('click', () => dbgStep(-1));
+$('dbgNext').addEventListener('click', () => dbgStep(1));
+window.addEventListener('keydown', e => { if (!debugMode || e.repeat) return; if (e.code === 'PageUp') { dbgStep(-1); e.preventDefault(); } else if (e.code === 'PageDown') { dbgStep(1); e.preventDefault(); } });
 // ---------- hints in three steps: the facility hands them out, reluctantly ----------
 const HINT_RULES = [null, null, { d: 3, t: 120, a: 30, gap: 0 }, { d: 6, t: 240, a: 60, gap: 60 }];
 let hintSt = {}; try { hintSt = JSON.parse(localStorage.getItem('loops-hints')) || {}; } catch (e) {}
