@@ -1504,6 +1504,7 @@ function tryTeleport(b) {
     if (b.kind === 'cube' && q.n.y !== 0 && Math.abs(b.vx) < 25) { // keep cubes from bouncing forever between floor portals
       b.vx += (Math.random() < 0.5 ? -1 : 1) * 70;
     }
+    if (b.kind === 'player' && p.n.y < 0 && q.n.y < 0 && b.vy > -300) b.vy = -300; // floor-to-floor: always pop out high enough to steer off, never jitter in place
     b.vang = wrapAng(b.vang + ang);
     if (b.kind === 'turret' && q.n.x !== 0) b.face = q.n.x > 0 ? 1 : -1;
     if (b.held) releaseHeld(b);
