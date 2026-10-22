@@ -4276,7 +4276,8 @@ function setPanel(name) {
 }
 function renderDbgStats() {
   const box = $('dbgStats'); if (!box) return;
-  box.hidden = !debugMode; if (!debugMode) return;
+  const show = debugMode || !!(PLATFORM && PLATFORM.tester); // test builds always show the data, without unlocking anything
+  box.hidden = !show; if (!show) return;
   const L = stats.levels || {}, rows = Object.keys(L).map(Number).sort((a, b) => a - b);
   const fmt = sec => { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
   $('dbgTable').innerHTML = rows.length ? '<table><tr>' + tr('dbgHead').map(h => `<th>${h}</th>`).join('') + '</tr>' +

@@ -8,6 +8,10 @@ const argv = process.argv.slice(1);
 // Steam Deck: Steam sets SteamDeck=1; --deck forces the same behaviour for testing
 const onDeck = process.env.SteamDeck === '1' || argv.includes('--deck');
 
+// Linux / Steam Deck: the Chromium sandbox needs a root-owned helper that a game folder cannot provide.
+// The app only ever shows its own local page (navigation is blocked below), so it runs without it.
+if (process.platform === 'linux' && !argv.includes('--sandbox')) app.commandLine.appendSwitch('no-sandbox');
+
 if (!app.requestSingleInstanceLock()) app.quit();
 
 // window state (size, fullscreen) next to the save data
@@ -52,7 +56,7 @@ ipcMain.on('loops:fullscreen', (_e, mode) => {
   if (!win) return;
   win.setFullScreen(mode === 'toggle' ? !win.isFullScreen() : !!mode);
 });
-ipcMain.on('loops:info', e => { e.returnValue = { steam: steam.available(), deck: onDeck, version: app.getVersion() }; });
+ipcMain.on('loops:info', e => { e.returnValue = { steam: steam.available(), deck: onDeck, version: app.getVersion(), tester: argv.includes('--tester') }; });
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 steam.init();

@@ -16,6 +16,10 @@ npm run dist:mac       # nur auf einem Mac
 
 `npm start` und `npm run dist:*` führen vorher `sync.js` aus. Es kopiert `../index.html` nach `app/index.html` und ersetzt den Google-Fonts-Link durch die mitgelieferten Schriften (`app/fonts`, SIL Open Font License). Die Desktop-App braucht dadurch kein Internet.
 
+## Testversion für Tester (Linux / Steam Deck)
+
+Fertige Builds liegen unter *Releases* im GitHub-Repo. `Loops.sh` startet die App mit `--no-sandbox` (auf SteamOS fehlt die root-eigene Sandbox-Hilfsdatei) und `--tester`: Damit zeigt die Hilfe unten die Testdaten (Tode, Neustarts, Zeit pro Kammer), ohne Kammern freizuschalten. Anleitung für Tester: `LIESMICH.txt` im Paket.
+
 ## Was die Desktop-App anders macht
 
 | | |

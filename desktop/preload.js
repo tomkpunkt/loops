@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('loopsPlatform', {
   steam: info.steam,
   deck: info.deck,
   version: info.version,
+  tester: !!info.tester,
   achieve: id => ipcRenderer.send('loops:achieve', String(id)),
   setFullscreen: on => ipcRenderer.send('loops:fullscreen', !!on),
   toggleFullscreen: () => ipcRenderer.send('loops:fullscreen', 'toggle'),
