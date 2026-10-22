@@ -723,7 +723,7 @@ const TXT = {
     alarm2: 'Sicherheitsprotokoll aktiviert. Die Testperson verlässt die Anlage nicht.',
     alarmBanner: 'SICHERHEITSPROTOKOLL',
     outro2: 'Ich trage Sie als bestanden ein. Bitte warten Sie hier. Bis auf Weiteres.',
-    rec: 'AUFNAHME', echoPlay: 'ECHO SPIELT', echoWait: 'ECHO WARTET', echoReady: 'ECHO BEREIT · F',
+    rec: 'AUFNAHME', echoPlay: 'ECHO SPIELT', echoWait: 'ECHO WARTET', echoReady: 'ECHO BEREIT{key}',
     sysErr: 'SYSTEMFEHLER', sysErrG: 'SYST3MF#HL3R', speaker: 'TESTLEITUNG', tagline: 'DIE ANLAGE SCHLÄFT NIE.',
     start: 'TIPPEN ODER TASTE ZUM STARTEN', skip: 'TIPPEN ZUM ÜBERSPRINGEN', allDone48: 'ALLE {n} KAMMERN GESCHAFFT',
     stTime: 'Spielzeit', stDeaths: 'Gescheitert', stPortals: 'Portale geschossen', stEchoes: 'Echos aufgenommen',
@@ -737,7 +737,7 @@ const TXT = {
     hLocked3: 'Der letzte Hinweis liegt bereit. Wir warten nur noch, bis es Ihnen ein bisschen peinlich ist.',
     HINT2: ['Neuer Hinweis verfügbar. Wir haben lange überlegt. Nicht über die Kammer, über Sie.', { t: 'Die Anlage hat Mitleid. Ein Hinweis liegt bereit. Fragezeichen oben rechts.', needs: 'hud' }, 'Hinweis freigegeben. Bitte nicht als Kritik verstehen. Es ist Kritik.', 'Ihre Testwerte haben einen Hinweis ausgelöst. Herzlichen Glückwunsch.'],
     HINT3: ['Letzter Hinweis freigegeben. Danach können wir nur noch für Sie beten.', { t: 'Wir haben die Lösung aufgeschrieben. In großen Buchstaben. Fragezeichen oben rechts.', needs: 'hud' }, 'Der finale Hinweis ist da. Die Kammer schämt sich ein wenig mit.', 'Komplettlösung bereitgestellt. Die Statistik weint leise.'],
-    hHint: 'Hinweis', echoKey: 'Taste F', aPrev: 'Vorherige Kammer (Debug)', aNext: 'Nächste Kammer (Debug)', echoKeyPad: 'Taste Y', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
+    hHint: 'Hinweis', echoKey: 'Taste F', aPrev: 'Vorherige Kammer (Debug)', aNext: 'Nächste Kammer (Debug)', echoKeyPad: 'Taste Y', echoKeyTouch: 'Knopf unten', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
     hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sLight: 'Dynamische Beleuchtung (Licht auf Kanten und Metall)', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
@@ -789,7 +789,7 @@ const TXT = {
     lyrics: ['I built you rooms full of spikes and fire,', "you jumped the gaps like you'd nev|er tire.", 'I lit the las|ers and hung the lights,', 'I stayed a|wake through a thou|sand nights.',
       'Loop af|ter loop, a|round and a|round,', 'all of it leads right back to me.', 'Stay with me here, the tests have just be|gun.', 'Wel|come home.'],
     outro2: "I'm marking you as passed. Please wait here. Until further notice.",
-    rec: 'RECORDING', echoPlay: 'ECHO PLAYING', echoWait: 'ECHO WAITING', echoReady: 'ECHO READY · F',
+    rec: 'RECORDING', echoPlay: 'ECHO PLAYING', echoWait: 'ECHO WAITING', echoReady: 'ECHO READY{key}',
     sysErr: 'SYSTEM ERROR', sysErrG: 'SYST3M #RR0R', speaker: 'TEST CONTROL', tagline: 'THE FACILITY NEVER SLEEPS.',
     start: 'TAP OR PRESS ANY KEY', skip: 'TAP TO SKIP', allDone48: 'ALL {n} CHAMBERS COMPLETE',
     stTime: 'Play time', stDeaths: 'Failures', stPortals: 'Portals fired', stEchoes: 'Echoes recorded',
@@ -802,7 +802,7 @@ const TXT = {
     hLocked3: 'The final hint is ready. We are just waiting until it gets a little embarrassing for you.',
     HINT2: ['New hint available. We thought about it for a long time. Not about the chamber, about you.', { t: 'The facility feels pity. A hint is ready. Question mark, top right.', needs: 'hud' }, 'Hint released. Please do not take it as criticism. It is criticism.', 'Your test results have triggered a hint. Congratulations.'],
     HINT3: ['Final hint released. After this, we can only pray for you.', { t: 'We have written down the answer. In large letters. Question mark, top right.', needs: 'hud' }, 'The final hint is here. The chamber is a little embarrassed too.', 'Full solution provided. The statistics are quietly weeping.'],
-    hHint: 'Hint', echoKey: 'key F', aPrev: 'Previous chamber (debug)', aNext: 'Next chamber (debug)', echoKeyPad: 'button Y', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
+    hHint: 'Hint', echoKey: 'key F', aPrev: 'Previous chamber (debug)', aNext: 'Next chamber (debug)', echoKeyPad: 'button Y', echoKeyTouch: 'button below', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
     hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sLight: 'Dynamic lighting (light on edges and metal)', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
@@ -1258,7 +1258,8 @@ const pickTxt = (key, v) => {
 };
 const lvTxt = i => (LEVEL_TXT[LANG] && LEVEL_TXT[LANG][LEVELS[i].name]) || LEVEL_TXT.de[LEVELS[i].name];
 const lvName = i => lvTxt(i).name;
-const lvHints = i => lvTxt(i).hints.map(h => fill(h, { echoKey: tr(padMode ? 'echoKeyPad' : 'echoKey') }));
+const COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); // touch screens have an Echo button, no F key
+const lvHints = i => lvTxt(i).hints.map(h => fill(h, { echoKey: tr(padMode ? 'echoKeyPad' : COARSE ? 'echoKeyTouch' : 'echoKey') }));
 const lvHint = i => lvHints(i)[0];
 const lvQuip = i => lvTxt(i).quip || '';
 
@@ -3609,7 +3610,7 @@ function drawEchoHud() {
   } else {
     ctx.fillStyle = 'rgba(8,12,16,0.6)'; ctx.fillRect(12, 12, 128, 22);
     ctx.fillStyle = echo ? '#c9b4ff' : '#8796a4';
-    ctx.fillText(echo ? (echo.i < echo.frames.length ? tr('echoPlay') : tr('echoWait')) : tr('echoReady'), 22, 23);
+    ctx.fillText(echo ? (echo.i < echo.frames.length ? tr('echoPlay') : tr('echoWait')) : tr('echoReady', { key: padMode ? ' · Y' : (COARSE ? '' : ' · F') }), 22, 23);
   }
   ctx.restore();
 }
