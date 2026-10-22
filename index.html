@@ -738,7 +738,7 @@ const TXT = {
     hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sLight: 'Dynamische Beleuchtung (Licht auf Kanten und Metall)', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
-    padnote: 'Controller: linker Stick laufen, A springen, rechter Stick zielen, LB/LT blau, RB/RT orange, Y Echo, X greifen, B werfen, Start Pause, Select neu starten.',
+    padnote: 'Controller: linker Stick laufen, A oder LB springen, rechter Stick zielen, LT blau, RT orange, RB greifen und werfen (auch X / B), Y Echo, Start Pause, Select neu starten.',
     hIron: 'Ironman', ironStart: 'Ironman-Lauf starten', ironGiveUp: 'Kammer aufgeben (kostet eine Marke)', ironQuit: 'Lauf abbrechen',
     ironRules: 'Alle Kammern am Stück, mit sichtbarem Timer. Kein Neustart, keine Hinweise, keine Kammerwahl, und Pausen zählen mit. Sie haben 3 Marken: Jeder Tod und jede aufgegebene Kammer kostet eine. Ohne Marken bleibt nur Überspringen (+60 s) oder alles neu. Wer die Seite neu lädt, verliert ebenfalls eine Marke.',
     ironLocked: 'Wird nach dem ersten vollständigen Durchgang freigeschaltet.', ironBest: 'Bestleistung: {ok} von {n} Kammern in {t}', ironRunning: 'Laufender Lauf: Kammer {c}, {t}, Marken {m}',
@@ -803,7 +803,7 @@ const TXT = {
     hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sLight: 'Dynamic lighting (light on edges and metal)', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
     keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
-    padnote: 'Controller: left stick move, A jump, right stick aim, LB/LT blue, RB/RT orange, Y echo, X grab, B throw, Start pause, Select restart.',
+    padnote: 'Controller: left stick move, A or LB jump, right stick aim, LT blue, RT orange, RB grab and throw (also X / B), Y echo, Start pause, Select restart.',
     hIron: 'Ironman', ironStart: 'Start Ironman run', ironGiveUp: 'Give up chamber (costs a token)', ironQuit: 'Abandon run',
     ironRules: 'Every chamber in one go, with a visible timer. No restarts, no hints, no chamber select, and pauses count. You have 3 tokens: every death and every abandoned chamber costs one. Without tokens you can only skip (+60 s) or start over. Reloading the page also costs a token.',
     ironLocked: 'Unlocks after your first complete run.', ironBest: 'Best: {ok} of {n} chambers in {t}', ironRunning: 'Run in progress: chamber {c}, {t}, tokens {m}',
@@ -4526,14 +4526,16 @@ function pollPad() {
   if (edge(8)) restartChamber();
   const dpad = (b(15) ? 1 : 0) - (b(14) ? 1 : 0);
   input.padAxis = Math.abs(ax) > 0.22 ? ax : dpad;
-  if (b(0) && !held.pad) pressJump();
-  held.pad = b(0);
+  const jumpBtn = b(0) || b(4); // A, or LB so the right thumb can stay on the aim stick
+  if (jumpBtn && !held.pad) pressJump();
+  held.pad = jumpBtn;
   const rx = gp.axes[2] || 0, ry = gp.axes[3] || 0, rl = Math.hypot(rx, ry);
   if (rl > 0.35) { aim.dx = rx / rl; aim.dy = ry / rl; aim.mode = 'stick'; aim.mouse = false; }
-  if (edge(4) || edge(6)) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('blue', aim.x, aim.y); }
-  if (edge(5) || edge(7)) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('orange', aim.x, aim.y); }
+  if (edge(6)) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('blue', aim.x, aim.y); }
+  if (edge(7)) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('orange', aim.x, aim.y); }
   if (edge(3)) toggleEcho();
   if (edge(2)) gravGrab(player);
+  if (edge(5)) { if (player.held) gravThrow(player); else gravGrab(player); } // RB: grab, or throw what you hold
   if (edge(1)) gravThrow(player);
   done();
 }

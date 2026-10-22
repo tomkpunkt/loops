@@ -71,8 +71,8 @@ Und dann ändern sich die Regeln.
 | | Tastatur & Maus | Touch | Gamepad |
 |---|---|---|---|
 | Laufen / Move | A / D | linker Stick | linker Stick |
-| Springen / Jump | W / Leertaste | „Sprung“ | A |
-| Portale / Portals | Links- / Rechtsklick | Portal-Tasten + rechter Stick | LB/LT · RB/RT |
+| Springen / Jump | W / Leertaste | „Sprung“ | A / LB |
+| Portale / Portals | Links- / Rechtsklick | Portal-Tasten + rechter Stick | LT · RT |
 | Neustart / Restart | R | ↻ | Start |
 | Hinweis / Hint | H | ? | – |
 
