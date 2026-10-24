@@ -4382,7 +4382,16 @@ canvas.addEventListener('pointerdown', e => {
 });
 
 const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'jump', KeyW: 'jump', Space: 'jump' };
+const MENU_KEYS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
 window.addEventListener('keydown', e => {
+  // menus work with the keyboard too (and with Steam Input layouts that send keys instead of a gamepad)
+  if (panel && !cine && (MENU_KEYS[e.code] || e.code === 'Enter' || e.code === 'Space' || e.code === 'Backspace')) {
+    e.preventDefault(); input.left = input.right = input.jump = false;
+    if (MENU_KEYS[e.code]) { if (padCurrent()) padMove(MENU_KEYS[e.code]); else padFocus(padItems()[0]); }
+    else if (e.code === 'Backspace') { if (!ironLocked()) padBack(); }
+    else if (!e.repeat) padActivate();
+    return;
+  }
   const a = KEYMAP[e.code];
   if (a) {
     e.preventDefault();
@@ -4516,6 +4525,11 @@ function padMove(dir) {
   const k = items.indexOf(cur) + (dir === 'down' || dir === 'right' ? 1 : -1); // everything else: a simple list in reading order
   if (k >= 0 && k < items.length) padFocus(items[k]);
 }
+function padActivate() {
+  const cur = padCurrent(); if (!cur) { padFocus(padItems()[0]); return; }
+  if (cur.tagName === 'SELECT') { cur.selectedIndex = (cur.selectedIndex + 1) % cur.options.length; cur.dispatchEvent(new Event('change', { bubbles: true })); }
+  else if (cur.type !== 'range') cur.click();
+}
 function padBack() {
   if (ironLocked()) return;
   if (panel === 'pause' || !padFrom) { padFrom = null; setPanel(null); return; }
@@ -4540,7 +4554,7 @@ function pollPad() {
     const now = performance.now();
     if (dir !== padRep.dir) { padRep.dir = dir; padRep.t = now + 380; if (dir) padMove(dir); }
     else if (dir && now >= padRep.t) { padRep.t = now + 110; padMove(dir); }
-    if (edge(0)) { const cur = padCurrent(); if (cur) { if (cur.tagName === 'SELECT') { cur.selectedIndex = (cur.selectedIndex + 1) % cur.options.length; cur.dispatchEvent(new Event('change', { bubbles: true })); } else if (cur.type !== 'range') cur.click(); } else padFocus(padItems()[0]); }
+    if (edge(0)) padActivate();
     else if (edge(1)) padBack();
     else if (edge(9)) { if (!ironLocked()) { padFrom = null; setPanel(null); } }
     done(); return;
