@@ -138,6 +138,14 @@ body.pad .hud,body.pad .ctrl,body.pad .taphint,body.pad .keys{display:none!impor
 body.pad .stage{border-radius:0;grid-column:auto;grid-row:auto}
 body.pad canvas{cursor:none}
 .padfocus{outline:2px solid var(--orange)!important;outline-offset:3px}
+/* controller: menus centred and sized for a TV or a handheld at arm's length */
+body.pad .help:not([hidden]){display:flex;flex-direction:column;justify-content:safe center;padding:3vh 6vw}
+body.pad .helpbody{width:min(760px,100%);font-size:1.2rem;gap:16px}
+body.pad .help h2{font-size:1.8rem} body.pad .help h3{font-size:.95rem}
+body.pad .pmenu{max-width:none;gap:12px} body.pad .pmenu .btn{font-size:1.25rem;padding:14px 20px}
+body.pad .help .btn,body.pad .help select{font-size:1.1rem}
+body.pad .help input[type=checkbox]{transform:scale(1.4);margin-right:8px}
+body.pad .padkeys{font-size:.95rem}
 .pmenu{display:grid;gap:8px;max-width:320px}
 .pmenu .btn{text-align:left;padding:10px 14px;font-size:.9rem}
 .padkeys{color:var(--muted);font-size:.75rem;margin:0}
@@ -753,7 +761,7 @@ const TXT = {
     dbgTitle: 'Testdaten', dbgCopy: 'Kopieren', dbgReset: 'Zurücksetzen', dbgEmpty: 'Noch keine Daten.', dbgConfirm: 'Testdaten löschen?',
     dbgHead: ['#', 'Tode', 'Neu', 'Zeit', 'OK'], dbgExport: ['Loops Testdaten', '#', 'Name', 'Tode', 'Neustarts', 'Sekunden', 'Geschafft'],
     dbgOn: 'DEBUG: alle Kammern freigeschaltet.', dbgOff: 'DEBUG aus.', voiceTest: 'So klinge ich.',
-    hPause: 'Pause', pRestart: 'Kammer neu starten', pHelp: 'Hinweis und Kammern', pFull: 'Vollbild an/aus', pQuit: 'Spiel beenden', padMenuKeys: 'Steuerkreuz wählen · A bestätigen · B zurück · Start schließen',
+    hPause: 'Pause', pRestart: 'Kammer neu starten', pHelp: 'Hinweis und Kammern', pFull: 'Vollbild an/aus', pQuit: 'Spiel beenden', padMenuKeys: 'Stick oder Steuerkreuz wählen · links/rechts ändern · A bestätigen · B zurück · Start schließen',
     resume: 'Weiterspielen', move: 'Laufen', aim: 'Zielen', blue: 'Blaues Portal', orange: 'Oranges Portal', jump: 'Sprung', echo: 'Echo', grab: 'Greifen', throw: 'Werfen'
   },
   en: {
@@ -818,7 +826,7 @@ const TXT = {
     dbgTitle: 'Test data', dbgCopy: 'Copy', dbgReset: 'Reset', dbgEmpty: 'No data yet.', dbgConfirm: 'Delete test data?',
     dbgHead: ['#', 'Deaths', 'Restarts', 'Time', 'OK'], dbgExport: ['Loops test data', '#', 'Name', 'Deaths', 'Restarts', 'Seconds', 'Completed'],
     dbgOn: 'DEBUG: all chambers unlocked.', dbgOff: 'DEBUG off.', voiceTest: 'This is how I sound.',
-    hPause: 'Paused', pRestart: 'Restart chamber', pHelp: 'Hint and chambers', pFull: 'Toggle fullscreen', pQuit: 'Quit game', padMenuKeys: 'D-pad select · A confirm · B back · Start close',
+    hPause: 'Paused', pRestart: 'Restart chamber', pHelp: 'Hint and chambers', pFull: 'Toggle fullscreen', pQuit: 'Quit game', padMenuKeys: 'Stick or D-pad select · left/right adjust · A confirm · B back · Start close',
     resume: 'Resume', move: 'Move', aim: 'Aim', blue: 'Blue portal', orange: 'Orange portal', jump: 'Jump', echo: 'Echo', grab: 'Grab', throw: 'Throw'
   }
 };
@@ -4491,25 +4499,22 @@ function padMove(dir) {
   const items = padItems(); if (!items.length) return;
   const cur = padCurrent();
   if (!cur) { padFocus(items[0]); return; }
-  if (cur.tagName === 'SELECT' && (dir === 'left' || dir === 'right')) {
-    const n = cur.options.length; cur.selectedIndex = (cur.selectedIndex + (dir === 'right' ? 1 : n - 1)) % n;
-    cur.dispatchEvent(new Event('change', { bubbles: true })); return;
+  if (dir === 'left' || dir === 'right') { // adjust the focused control instead of jumping around
+    const d = dir === 'right' ? 1 : -1;
+    if (cur.type === 'range') { const st = +cur.step || 0.05; cur.value = Math.min(+cur.max, Math.max(+cur.min, +cur.value + d * st * 2)); cur.dispatchEvent(new Event('input', { bubbles: true })); cur.dispatchEvent(new Event('change', { bubbles: true })); return; }
+    if (cur.tagName === 'SELECT') { cur.selectedIndex = (cur.selectedIndex + d + cur.options.length) % cur.options.length; cur.dispatchEvent(new Event('change', { bubbles: true })); return; }
+    if (!cur.closest('#dots')) return;
   }
-  if (cur.type === 'range' && (dir === 'left' || dir === 'right')) {
-    const st = +cur.step || 0.05; cur.value = Math.max(+cur.min, Math.min(+cur.max, +cur.value + (dir === 'right' ? st : -st)));
-    cur.dispatchEvent(new Event('input', { bubbles: true })); cur.dispatchEvent(new Event('change', { bubbles: true })); return;
+  if (cur.closest('#dots') && (dir === 'left' || dir === 'right' || dir === 'up' || dir === 'down')) { // chamber grid: move spatially
+    const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const v = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+    let best = null, bs = 1e9;
+    for (const el of items) { if (el === cur) continue; const q = el.getBoundingClientRect(), dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy;
+      const along = dx * v[0] + dy * v[1]; if (along <= 4) continue; const sc = along + Math.abs(dx * v[1] - dy * v[0]) * 2.2; if (sc < bs) { bs = sc; best = el; } }
+    if (best) { padFocus(best); return; }
   }
-  const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-  const v = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
-  let best = null, bs = Infinity;
-  for (const el of items) {
-    if (el === cur) continue;
-    const q = el.getBoundingClientRect(), dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy;
-    const along = dx * v[0] + dy * v[1]; if (along <= 4) continue;
-    const across = Math.abs(dx * v[1] - dy * v[0]), sc = along + across * 2.2;
-    if (sc < bs) { bs = sc; best = el; }
-  }
-  if (best) padFocus(best);
+  const k = items.indexOf(cur) + (dir === 'down' || dir === 'right' ? 1 : -1); // everything else: a simple list in reading order
+  if (k >= 0 && k < items.length) padFocus(items[k]);
 }
 function padBack() {
   if (ironLocked()) return;
