@@ -138,6 +138,10 @@ body.pad .hud,body.pad .ctrl,body.pad .taphint,body.pad .keys{display:none!impor
 body.pad .stage{border-radius:0;grid-column:auto;grid-row:auto}
 body.pad canvas{cursor:none}
 .padfocus{outline:2px solid var(--orange)!important;outline-offset:3px}
+.binds{display:grid;grid-template-columns:1fr auto auto;gap:6px 10px;align-items:center;margin-bottom:8px}
+.binds small{font:500 .65rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
+.binds .btn{min-width:7.5em;text-align:center;padding:6px 10px;font-size:.8rem}
+.binds .btn.wait{border-color:var(--orange);color:var(--orange)}
 /* controller: menus centred and sized for a TV or a handheld at arm's length */
 body.pad .help:not([hidden]){display:flex;flex-direction:column;justify-content:safe center;padding:3vh 6vw}
 body.pad .helpbody{width:min(760px,100%);font-size:1.2rem;gap:16px}
@@ -187,9 +191,9 @@ body.iron .ironnote{display:block}
           <div class="langs"><button class="btn" type="button" id="dbgCopy" data-t="dbgCopy"></button><button class="btn" type="button" id="dbgReset" data-t="dbgReset"></button></div>
         </div>
         <h3 data-t="hControls"></h3>
-        <p class="keys" data-t-html="keys"></p>
+        <p class="keys"></p>
         <p class="taphint"></p>
-        <p class="padnote" id="padnote" data-t="padnote" hidden></p>
+        <p class="padnote" id="padnote" hidden></p>
         <button class="btn close" id="helpClose" type="button" data-t="resume"></button>
       </div>
     </div>
@@ -241,6 +245,12 @@ body.iron .ironnote{display:block}
           <label class="chk"><input type="checkbox" id="jumpChk"><span data-t="sStickJump"></span></label>
           <label class="chk"><input type="checkbox" id="lightChk"><span data-t="sLight"></span></label>
           <label class="chk"><input type="checkbox" id="calmChk"><span data-t="sCalm"></span></label>
+        </div>
+        <div id="bindSec">
+          <h3 data-t="hBinds"></h3>
+          <p class="ironinfo" data-t="bindNote"></p>
+          <div class="binds" id="binds"></div>
+          <button class="btn" type="button" id="bindReset" data-t="bindReset"></button>
         </div>
         <h3 data-t="hIron"></h3>
         <p class="ironinfo" id="ironInfo"></p>
@@ -745,11 +755,11 @@ const TXT = {
     hLocked3: 'Der letzte Hinweis liegt bereit. Wir warten nur noch, bis es Ihnen ein bisschen peinlich ist.',
     HINT2: ['Neuer Hinweis verfügbar. Wir haben lange überlegt. Nicht über die Kammer, über Sie.', { t: 'Die Anlage hat Mitleid. Ein Hinweis liegt bereit. Fragezeichen oben rechts.', needs: 'hud' }, 'Hinweis freigegeben. Bitte nicht als Kritik verstehen. Es ist Kritik.', 'Ihre Testwerte haben einen Hinweis ausgelöst. Herzlichen Glückwunsch.'],
     HINT3: ['Letzter Hinweis freigegeben. Danach können wir nur noch für Sie beten.', { t: 'Wir haben die Lösung aufgeschrieben. In großen Buchstaben. Fragezeichen oben rechts.', needs: 'hud' }, 'Der finale Hinweis ist da. Die Kammer schämt sich ein wenig mit.', 'Komplettlösung bereitgestellt. Die Statistik weint leise.'],
-    hHint: 'Hinweis', echoKey: 'Taste F', aPrev: 'Vorherige Kammer (Debug)', aNext: 'Nächste Kammer (Debug)', echoKeyPad: 'Taste Y', echoKeyTouch: 'Knopf unten', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
+    hHint: 'Hinweis', echoKey: 'Taste {k}', hBinds: 'Tastenbelegung', bindKb: 'Tastatur', bindPad: 'Controller', bindWait: 'Taste drücken …', bindWaitPad: 'Knopf drücken …', bindReset: 'Standard wiederherstellen', bindNote: 'Antippen und die neue Taste drücken, Esc bricht ab. Pause (Esc / Start), Mausklicks und die Menüsteuerung bleiben fest.', actLeft: 'Links', actRight: 'Rechts', actJump: 'Springen', actBlue: 'Portal blau', actOrange: 'Portal orange', actGrab: 'Greifen / Werfen', actThrow: 'Werfen', actEcho: 'Echo', actRestart: 'Kammer neu', actHint: 'Hinweis', actOptions: 'Optionen', keySpace: 'Leertaste', aPrev: 'Vorherige Kammer (Debug)', aNext: 'Nächste Kammer (Debug)', echoKeyPad: 'Taste {k}', echoKeyTouch: 'Knopf unten', hChambers: 'Kammern', hControls: 'Steuerung', hLang: 'Sprache',
     hOpts: 'Optionen', aOpts: 'Optionen', hSettings: 'Ton und Anzeige', sMusic: 'Musik', sSfx: 'Effekte', sVoice: 'Stimme', sCalm: 'Bildschirmeffekte reduzieren', sLight: 'Dynamische Beleuchtung (Licht auf Kanten und Metall)', sStickJump: 'Springen per Joystick (nach oben ziehen)', taphintNJ: 'Linker Stick läuft, die Sprung-Taste springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
-    keys: '<kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd>/<kbd>Leertaste</kbd> springen · <kbd>Linksklick</kbd> blau · <kbd>Rechtsklick</kbd> orange · <kbd>R</kbd> neu · <kbd>H</kbd> Hinweis · <kbd>O</kbd> Optionen · <kbd>F</kbd> Echo · <kbd>G</kbd> greifen · <kbd>V</kbd> werfen',
+    keys: '{left} {right} laufen · {jump} springen · <kbd>Linksklick</kbd>/{blue} blau · <kbd>Rechtsklick</kbd>/{orange} orange · {restart} neu · {hint} Hinweis · {options} Optionen · {echo} Echo · {grab} greifen · {throw} werfen',
     taphint: 'Linker Stick läuft, nach oben ziehen springt. Rechter Stick zielt, die Richtung bleibt stehen. Du kannst auch direkt ins Bild tippen. Weitere Tasten erscheinen, sobald du sie brauchst.',
-    padnote: 'Controller: linker Stick laufen, A oder LB springen, rechter Stick zielen, LT blau, RT orange, RB greifen und werfen (auch X / B), Y Echo, Start Pause, Select neu starten.',
+    padnote: 'Controller: linker Stick laufen, {jump} springen, rechter Stick zielen, {blue} blau, {orange} orange, {grab} greifen und werfen, {throw} werfen, {echo} Echo, Start Pause, {restart} neu starten.',
     hIron: 'Ironman', ironStart: 'Ironman-Lauf starten', ironGiveUp: 'Kammer aufgeben (kostet eine Marke)', ironQuit: 'Lauf abbrechen',
     ironRules: 'Alle Kammern am Stück, mit sichtbarem Timer. Kein Neustart, keine Hinweise, keine Kammerwahl, und Pausen zählen mit. Sie haben 3 Marken: Jeder Tod und jede aufgegebene Kammer kostet eine. Ohne Marken bleibt nur Überspringen (+60 s) oder alles neu. Wer die Seite neu lädt, verliert ebenfalls eine Marke.',
     ironLocked: 'Wird nach dem ersten vollständigen Durchgang freigeschaltet.', ironBest: 'Bestleistung: {ok} von {n} Kammern in {t}', ironRunning: 'Laufender Lauf: Kammer {c}, {t}, Marken {m}',
@@ -810,11 +820,11 @@ const TXT = {
     hLocked3: 'The final hint is ready. We are just waiting until it gets a little embarrassing for you.',
     HINT2: ['New hint available. We thought about it for a long time. Not about the chamber, about you.', { t: 'The facility feels pity. A hint is ready. Question mark, top right.', needs: 'hud' }, 'Hint released. Please do not take it as criticism. It is criticism.', 'Your test results have triggered a hint. Congratulations.'],
     HINT3: ['Final hint released. After this, we can only pray for you.', { t: 'We have written down the answer. In large letters. Question mark, top right.', needs: 'hud' }, 'The final hint is here. The chamber is a little embarrassed too.', 'Full solution provided. The statistics are quietly weeping.'],
-    hHint: 'Hint', echoKey: 'key F', aPrev: 'Previous chamber (debug)', aNext: 'Next chamber (debug)', echoKeyPad: 'button Y', echoKeyTouch: 'button below', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
+    hHint: 'Hint', echoKey: 'key {k}', hBinds: 'Controls', bindKb: 'Keyboard', bindPad: 'Controller', bindWait: 'Press a key …', bindWaitPad: 'Press a button …', bindReset: 'Restore defaults', bindNote: 'Tap and press the new key, Esc cancels. Pause (Esc / Start), mouse clicks and menu navigation stay fixed.', actLeft: 'Left', actRight: 'Right', actJump: 'Jump', actBlue: 'Blue portal', actOrange: 'Orange portal', actGrab: 'Grab / throw', actThrow: 'Throw', actEcho: 'Echo', actRestart: 'Restart chamber', actHint: 'Hint', actOptions: 'Options', keySpace: 'Space', aPrev: 'Previous chamber (debug)', aNext: 'Next chamber (debug)', echoKeyPad: 'button {k}', echoKeyTouch: 'button below', hChambers: 'Chambers', hControls: 'Controls', hLang: 'Language',
     hOpts: 'Options', aOpts: 'Options', hSettings: 'Sound and display', sMusic: 'Music', sSfx: 'Effects', sVoice: 'Voice', sCalm: 'Reduce screen effects', sLight: 'Dynamic lighting (light on edges and metal)', sStickJump: 'Jump with the joystick (push up)', taphintNJ: 'Left stick moves, the jump button jumps. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
-    keys: '<kbd>A</kbd> <kbd>D</kbd> move · <kbd>W</kbd>/<kbd>Space</kbd> jump · <kbd>Left click</kbd> blue · <kbd>Right click</kbd> orange · <kbd>R</kbd> restart · <kbd>H</kbd> hint · <kbd>O</kbd> options · <kbd>F</kbd> echo · <kbd>G</kbd> grab · <kbd>V</kbd> throw',
+    keys: '{left} {right} move · {jump} jump · <kbd>Left click</kbd>/{blue} blue · <kbd>Right click</kbd>/{orange} orange · {restart} restart · {hint} hint · {options} options · {echo} echo · {grab} grab · {throw} throw',
     taphint: 'Left stick moves, push up to jump. Right stick aims and keeps its direction. You can also tap straight into the picture. More buttons appear once you need them.',
-    padnote: 'Controller: left stick move, A or LB jump, right stick aim, LT blue, RT orange, RB grab and throw (also X / B), Y echo, Start pause, Select restart.',
+    padnote: 'Controller: left stick move, {jump} jump, right stick aim, {blue} blue, {orange} orange, {grab} grab and throw, {throw} throw, {echo} echo, Start pause, {restart} restart.',
     hIron: 'Ironman', ironStart: 'Start Ironman run', ironGiveUp: 'Give up chamber (costs a token)', ironQuit: 'Abandon run',
     ironRules: 'Every chamber in one go, with a visible timer. No restarts, no hints, no chamber select, and pauses count. You have 3 tokens: every death and every abandoned chamber costs one. Without tokens you can only skip (+60 s) or start over. Reloading the page also costs a token.',
     ironLocked: 'Unlocks after your first complete run.', ironBest: 'Best: {ok} of {n} chambers in {t}', ironRunning: 'Run in progress: chamber {c}, {t}, tokens {m}',
@@ -1267,7 +1277,7 @@ const pickTxt = (key, v) => {
 const lvTxt = i => (LEVEL_TXT[LANG] && LEVEL_TXT[LANG][LEVELS[i].name]) || LEVEL_TXT.de[LEVELS[i].name];
 const lvName = i => lvTxt(i).name;
 const COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); // touch screens have an Echo button, no F key
-const lvHints = i => lvTxt(i).hints.map(h => fill(h, { echoKey: tr(padMode ? 'echoKeyPad' : COARSE ? 'echoKeyTouch' : 'echoKey') }));
+const lvHints = i => lvTxt(i).hints.map(h => fill(h, { echoKey: padMode ? tr('echoKeyPad', { k: firstLabel('echo', 'p') || '–' }) : COARSE ? tr('echoKeyTouch') : tr('echoKey', { k: firstLabel('echo', 'k') || '–' }) }));
 const lvHint = i => lvHints(i)[0];
 const lvQuip = i => lvTxt(i).quip || '';
 
@@ -3627,7 +3637,7 @@ function drawEchoHud() {
   } else {
     ctx.fillStyle = 'rgba(8,12,16,0.6)'; ctx.fillRect(12, 12, 128, 22);
     ctx.fillStyle = echo ? '#c9b4ff' : '#8796a4';
-    ctx.fillText(echo ? (echo.i < echo.frames.length ? tr('echoPlay') : tr('echoWait')) : tr('echoReady', { key: padMode ? ' · Y' : (COARSE ? '' : ' · F') }), 22, 23);
+    ctx.fillText(echo ? (echo.i < echo.frames.length ? tr('echoPlay') : tr('echoWait')) : tr('echoReady', { key: (k => k ? ' · ' + k : '')(padMode ? firstLabel('echo', 'p') : COARSE ? '' : firstLabel('echo', 'k')) }), 22, 23);
   }
   ctx.restore();
 }
@@ -4381,9 +4391,69 @@ canvas.addEventListener('pointerdown', e => {
   }
 });
 
-const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'jump', KeyW: 'jump', Space: 'jump' };
+// ---------- key and button bindings: every action can be moved on keyboard and controller ----------
+const ACTS = ['left', 'right', 'jump', 'blue', 'orange', 'grab', 'throw', 'echo', 'restart', 'hint', 'options'];
+const BIND_DEF = { left: { k: ['KeyA', 'ArrowLeft'], p: [14] }, right: { k: ['KeyD', 'ArrowRight'], p: [15] }, jump: { k: ['KeyW', 'Space', 'ArrowUp'], p: [0, 4] },
+  blue: { k: ['KeyQ'], p: [6] }, orange: { k: ['KeyE'], p: [7] }, grab: { k: ['KeyG'], p: [5, 2] }, throw: { k: ['KeyV'], p: [1] },
+  echo: { k: ['KeyF'], p: [3] }, restart: { k: ['KeyR'], p: [8] }, hint: { k: ['KeyH'], p: [] }, options: { k: ['KeyO'], p: [] } };
+const PAD_FIXED = [9]; // Start always pauses
+const PADN = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Select', 'Start', 'LS', 'RS', '↑', '↓', '←', '→'];
+const ARROWS = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' };
+const cloneBinds = o => Object.fromEntries(ACTS.map(a => [a, { k: [...o[a].k], p: [...o[a].p] }]));
+let BIND = cloneBinds(BIND_DEF);
+try { const sv = JSON.parse(localStorage.getItem('loops-binds')); if (sv) for (const a of ACTS) if (sv[a] && Array.isArray(sv[a].k) && Array.isArray(sv[a].p)) BIND[a] = { k: sv[a].k.slice(0, 3), p: sv[a].p.slice(0, 3) }; } catch (e) {}
+const saveBinds = () => { try { localStorage.setItem('loops-binds', JSON.stringify(BIND)); } catch (e) {} };
+const actOfKey = code => ACTS.find(a => BIND[a].k.includes(code)) || null;
+let kbLayout = null;
+try { if (navigator.keyboard && navigator.keyboard.getLayoutMap) navigator.keyboard.getLayoutMap().then(m => { kbLayout = m; renderBinds(); renderKeyHelp(); }).catch(() => {}); } catch (e) {}
+function keyName(code) {
+  if (code === 'Space') return tr('keySpace');
+  if (ARROWS[code]) return ARROWS[code];
+  const l = kbLayout && kbLayout.get(code); if (l) return l.toUpperCase();
+  return code.replace(/^Key|^Digit/, '').replace(/(Left|Right)$/, '');
+}
+const bindLabel = (a, dev) => (dev === 'k' ? BIND[a].k.map(keyName) : BIND[a].p.map(i => PADN[i] || '#' + i)).join(' / ') || '–';
+const firstLabel = (a, dev) => (dev === 'k' ? (BIND[a].k[0] ? keyName(BIND[a].k[0]) : '') : (BIND[a].p.length ? PADN[BIND[a].p[0]] || '' : ''));
+function renderKeyHelp() {
+  const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const el = document.querySelector('.keys'); if (el) el.innerHTML = fill(TXT[LANG].keys || TXT.de.keys, Object.fromEntries(ACTS.map(a => [a, BIND[a].k.map(c => '<kbd>' + esc(keyName(c)) + '</kbd>').join('/') || '–'])));
+  const pn = document.getElementById('padnote'); if (pn) pn.textContent = tr('padnote', Object.fromEntries(ACTS.map(a => [a, bindLabel(a, 'p')])));
+}
+let capture = null;
+function endCapture() { if (capture) clearTimeout(capture.t); capture = null; renderBinds(); }
+function startCapture(a, dev) { endCapture(); capture = { a, dev, t: setTimeout(endCapture, 8000) }; renderBinds(); }
+function setBind(a, dev, v) {
+  for (const o of ACTS) BIND[o][dev] = BIND[o][dev].filter(x => x !== v); // a key belongs to one action only
+  BIND[a][dev] = [v]; saveBinds(); input.left = input.right = input.jump = false; renderKeyHelp();
+}
+function renderBinds() {
+  const box = document.getElementById('binds'); if (!box) return;
+  const sec = document.getElementById('bindSec'); if (sec) sec.hidden = COARSE && !padMode; // phones play by touch
+  const jc = document.getElementById('jumpChk'); if (jc && jc.closest) { const row = jc.closest('label'); if (row) row.hidden = !COARSE || padMode; } // the stick-jump option is for the touch stick only
+  const foc = document.querySelector('#binds .padfocus'), fk = foc && foc.dataset ? foc.dataset.a + foc.dataset.d : null;
+  box.innerHTML = '';
+  const head = t => { const e = document.createElement('small'); e.textContent = t; box.appendChild(e); };
+  head(''); head(tr('bindKb')); head(tr('bindPad'));
+  for (const a of ACTS) {
+    const n = document.createElement('span'); n.textContent = tr('act' + a[0].toUpperCase() + a.slice(1)); box.appendChild(n);
+    for (const d of ['k', 'p']) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.dataset.a = a; b.dataset.d = d;
+      const w = capture && capture.a === a && capture.dev === d; if (w) b.classList.add('wait');
+      b.textContent = w ? tr(d === 'p' ? 'bindWaitPad' : 'bindWait') : bindLabel(a, d);
+      b.addEventListener('click', e => { e.stopPropagation(); startCapture(a, d); });
+      box.appendChild(b);
+      if (fk === a + d) padFocus(b);
+    }
+  }
+}
+
 const MENU_KEYS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
 window.addEventListener('keydown', e => {
+  if (capture) { // waiting for a new key in the bindings list
+    e.preventDefault(); e.stopPropagation();
+    if (capture.dev === 'k' && e.code !== 'Escape') setBind(capture.a, 'k', e.code);
+    endCapture(); return;
+  }
   // menus work with the keyboard too (and with Steam Input layouts that send keys instead of a gamepad)
   if (panel && !cine && (MENU_KEYS[e.code] || e.code === 'Enter' || e.code === 'Space' || e.code === 'Backspace')) {
     e.preventDefault(); input.left = input.right = input.jump = false;
@@ -4392,23 +4462,23 @@ window.addEventListener('keydown', e => {
     else if (!e.repeat) padActivate();
     return;
   }
-  const a = KEYMAP[e.code];
-  if (a) {
+  const a = e.code === 'Escape' ? null : actOfKey(e.code);
+  if (a === 'left' || a === 'right' || a === 'jump') {
     e.preventDefault();
     if (a === 'jump') pressJump();
     input[a] = true;
   } else if (ironLocked()) { /* a decision is required */ }
   else if (e.code === 'Escape' && padMode) { if (panel) padBack(); else openPause(); }
-  else if (e.code === 'KeyH' || e.code === 'Escape') { setPanel(e.code === 'Escape' || panel === 'help' ? null : 'help'); }
-  else if (e.code === 'KeyO') { setPanel(panel === 'opts' ? null : 'opts'); }
-  else if (e.code === 'KeyR') { restartChamber(); }
-  else if (e.code === 'KeyQ') fire('blue', aim.x, aim.y);
-  else if (e.code === 'KeyE') fire('orange', aim.x, aim.y);
-  else if (e.code === 'KeyF') { e.preventDefault(); toggleEcho(); }
-  else if (e.code === 'KeyG') gravGrab(player);
-  else if (e.code === 'KeyV') gravThrow(player);
+  else if (a === 'hint' || e.code === 'Escape') { setPanel(e.code === 'Escape' || panel === 'help' ? null : 'help'); }
+  else if (a === 'options') { setPanel(panel === 'opts' ? null : 'opts'); }
+  else if (a === 'restart') { restartChamber(); }
+  else if (a === 'blue') fire('blue', aim.x, aim.y);
+  else if (a === 'orange') fire('orange', aim.x, aim.y);
+  else if (a === 'echo') { e.preventDefault(); toggleEcho(); }
+  else if (a === 'grab') { if (player.held) gravThrow(player); else gravGrab(player); }
+  else if (a === 'throw') gravThrow(player);
 });
-window.addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a) input[a] = false; });
+window.addEventListener('keyup', e => { const a = actOfKey(e.code); if (a === 'left' || a === 'right' || a === 'jump') input[a] = false; });
 window.addEventListener('blur', () => { input.left = input.right = input.jump = false; });
 
 function syncAim() {
@@ -4482,7 +4552,7 @@ function setPadMode(on, noFs) {
   if (!on && PLATFORM) return; // the desktop build always keeps the full-window layout
   padMode = on; document.body.classList.toggle('pad', on);
   if (on && !noFs) tryFullscreen(); else fsWanted = false;
-  layout();
+  layout(); renderBinds(); renderKeyHelp();
 }
 // any real user gesture (key, mouse) gets a second chance at full screen if the controller could not open it
 window.addEventListener('keydown', () => { if (padMode && fsWanted && !document.fullscreenElement) tryFullscreen(); }, true);
@@ -4548,6 +4618,13 @@ function pollPad() {
   // the first real input from a controller switches to the controller layout
   if (!padMode && (gp.buttons.some((_, i) => edge(i)) || Math.abs(ax) > 0.6 || Math.abs(ay) > 0.6)) setPadMode(true);
   if (cine) { if (gp.buttons.some((_, i) => edge(i))) cineInput(); done(); input.padAxis = 0; return; }
+  if (capture) { // waiting for a new button in the bindings list
+    input.padAxis = 0;
+    if (capture.dev === 'p') { for (let i = 0; i < gp.buttons.length; i++) if (edge(i)) { if (!PAD_FIXED.includes(i)) setBind(capture.a, 'p', i); endCapture(); break; } }
+    else if (edge(1) || edge(9)) endCapture();
+    done(); return;
+  }
+  const pb = a => BIND[a].p.some(b), pe = a => BIND[a].p.some(edge);
   if (panel) { // menu navigation
     input.padAxis = 0; held.pad = true;
     const dir = b(12) || ay < -0.6 ? 'up' : b(13) || ay > 0.6 ? 'down' : b(14) || ax < -0.6 ? 'left' : b(15) || ax > 0.6 ? 'right' : null;
@@ -4561,20 +4638,21 @@ function pollPad() {
   }
   padRep.dir = null;
   if (edge(9)) { if (state === 'done') loadLevel(0); else openPause(); done(); return; }
-  if (edge(8)) restartChamber();
-  const dpad = (b(15) ? 1 : 0) - (b(14) ? 1 : 0);
+  if (pe('restart')) restartChamber();
+  if (pe('hint')) { openPause(); $('pHelp').click(); }
+  if (pe('options')) { openPause(); $('pOpts').click(); }
+  const dpad = (pb('right') ? 1 : 0) - (pb('left') ? 1 : 0);
   input.padAxis = Math.abs(ax) > 0.22 ? ax : dpad;
-  const jumpBtn = b(0) || b(4); // A, or LB so the right thumb can stay on the aim stick
+  const jumpBtn = pb('jump'); // A, or LB so the right thumb can stay on the aim stick
   if (jumpBtn && !held.pad) pressJump();
   held.pad = jumpBtn;
   const rx = gp.axes[2] || 0, ry = gp.axes[3] || 0, rl = Math.hypot(rx, ry);
   if (rl > 0.35) { aim.dx = rx / rl; aim.dy = ry / rl; aim.mode = 'stick'; aim.mouse = false; }
-  if (edge(6)) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('blue', aim.x, aim.y); }
-  if (edge(7)) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('orange', aim.x, aim.y); }
-  if (edge(3)) toggleEcho();
-  if (edge(2)) gravGrab(player);
-  if (edge(5)) { if (player.held) gravThrow(player); else gravGrab(player); } // RB: grab, or throw what you hold
-  if (edge(1)) gravThrow(player);
+  if (pe('blue')) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('blue', aim.x, aim.y); }
+  if (pe('orange')) { if (aim.mode === 'none') aim.mode = 'stick'; syncAim(); fire('orange', aim.x, aim.y); }
+  if (pe('echo')) toggleEcho();
+  if (pe('grab')) { if (player.held) gravThrow(player); else gravGrab(player); } // grab, or throw what you hold
+  if (pe('throw')) gravThrow(player);
   done();
 }
 $('pResume').addEventListener('click', () => { padFrom = null; setPanel(null); });
@@ -4608,9 +4686,10 @@ function applyLang() {
   document.querySelectorAll('[data-aria]').forEach(el => { el.setAttribute('aria-label', tr(el.dataset.aria)); });
   const ht = document.querySelector('.taphint'); if (ht) ht.textContent = tr(SETTINGS.stickJump ? 'taphint' : 'taphintNJ');
   const sel = $('langSel'); if (sel) sel.value = LANG;
-  ironUi(); renderDbgStats();
+  ironUi(); renderDbgStats(); renderKeyHelp(); renderBinds();
   if (grid) updateHud();
 }
+$('bindReset').addEventListener('click', () => { BIND = cloneBinds(BIND_DEF); saveBinds(); endCapture(); renderKeyHelp(); });
 // language dropdown, filled from LANGS so a new language only needs its text blocks
 { const sel = $('langSel');
   for (const [code, label] of Object.entries(LANGS)) { const o = document.createElement('option'); o.value = code; o.textContent = label; o.lang = code; sel.appendChild(o); }

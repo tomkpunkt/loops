@@ -27,7 +27,7 @@ Das ganze Spiel steckt in einer einzigen Datei, `index.html`, ohne Abhängigkeit
 | Neu starten | R | ↻ | Select |
 | Hinweis & Kammern | H | ? | – |
 
-Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu. Sobald ein Controller erkannt wird, wechselt das Spiel in eine Vollbild-Ansicht ohne Touch-Steuerung (z. B. für das Steam Deck); alle Menüs lassen sich dann mit Steuerkreuz, A und B bedienen.
+Weitere Fähigkeiten und Tasten kommen im Laufe des Spiels hinzu. Sobald ein Controller erkannt wird, wechselt das Spiel in eine Vollbild-Ansicht ohne Touch-Steuerung (z. B. für das Steam Deck); alle Menüs lassen sich dann mit Steuerkreuz, A und B bedienen. Alle Aktionen lassen sich unter Optionen → Tastenbelegung für Tastatur und Controller neu belegen.
 
 ## Features
 
